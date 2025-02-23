@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - include:
+      file: db/changes/create-users-table.yaml
+  - include:
+      file: db/changes/create-projects-table.yaml
+  - include:
+      file: db/changes/create-tasks-table.yaml
+  - include:
+      file: db/changes/create-comments-table.yaml
+  - include:
+      file: db/changes/create-attachments-table.yaml
+  - include:
+      file: db/changes/create-labels-table.yaml
+  - include:
+      file: db/changes/create-task-labels-table.yaml

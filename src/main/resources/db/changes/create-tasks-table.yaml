@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-tasks-table
+      author: Yaroslav
+      changes:
+        - createTable:
+            tableName: tasks
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: priority
+                  type: ENUM('LOW', 'MEDIUM', 'HIGH')
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: ENUM('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED')
+                  constraints:
+                    nullable: false
+              - column:
+                  name: due_date
+                  type: DATE
+              - column:
+                  name: project_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_tasks_projects
+                    referencedTableName: projects
+                    referencedColumnNames: id
+                    onDelete: CASCADE
+              - column:
+                  name: assignee_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_tasks_users
+                    referencedTableName: users
+                    referencedColumnNames: id
+                    onDelete: SET NULL
