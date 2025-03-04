@@ -25,6 +25,4 @@ public class UserRegistrationRequestDto {
     private String firstName;
 
     private String lastName;
-
-    private String shippingAddress;
 }

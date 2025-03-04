@@ -8,7 +8,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(config = MapperConfig.class)
-public interface UserMapper{
+public interface UserMapper {
     UserResponseDto toUserResponse(User savedUser);
 
     @Mapping(target = "username", source = "username")
