@@ -10,7 +10,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class Project{
+public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,5 +22,4 @@ public class Project{
     LocalDate startDate;
 
     LocalDate endDate;
-
 }

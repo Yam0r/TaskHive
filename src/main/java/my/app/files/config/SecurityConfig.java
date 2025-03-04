@@ -1,6 +1,9 @@
 package my.app.files.config;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 import lombok.RequiredArgsConstructor;
+import my.app.files.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,14 +17,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import my.app.files.security.JwtAuthenticationFilter;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @EnableMethodSecurity
 @RequiredArgsConstructor
 @Configuration
-public class SecurityConfig{
+public class SecurityConfig {
     private final UserDetailsService userDetailsService;
 
     @Bean
@@ -52,7 +52,6 @@ public class SecurityConfig{
                 .userDetailsService(userDetailsService)
                 .build();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(
