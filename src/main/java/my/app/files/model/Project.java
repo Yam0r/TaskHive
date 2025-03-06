@@ -1,8 +1,6 @@
 package my.app.files.model;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,16 +8,22 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
+@Entity
+@Table(name = "projects")
 public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    String name;
+    private String name;
 
-    String description;
+    private String description;
 
-    LocalDate startDate;
+    private LocalDate startDate;
 
-    LocalDate endDate;
+    private LocalDate endDate;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }

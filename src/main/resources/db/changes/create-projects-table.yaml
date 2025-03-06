@@ -33,3 +33,11 @@ databaseChangeLog:
                   type: ENUM('INITIATED', 'IN_PROGRESS', 'COMPLETED')
                   constraints:
                     nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_projects_users
+                    referencedTableName: users
+                    referencedColumnNames: id
