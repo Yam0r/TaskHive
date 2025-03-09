@@ -1,4 +1,4 @@
-package my.app.files.dto;
+package my.app.files.dto.task;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class TasksDto {
+public class TaskDto {
     private Long id;
     private Long assigneeId;
 
