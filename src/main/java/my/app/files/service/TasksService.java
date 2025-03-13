@@ -9,8 +9,16 @@ import java.util.List;
 
 public interface TasksService {
     TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto);
+
     List<TaskDto> retrieveTasksForAProject(Pageable pageable);
+
     TaskDto retrieveTaskDetails(Long id);
+
     void updateTask(Long id, UpdateTaskRequestDto updateTaskRequestDto);
+
     void deleteTask(Long id);
+
+    TaskDto assignLabelToTask(Long taskId, Long labelId);
+
+    TaskDto removeLabelFromTask(Long taskId, Long labelId);
 }

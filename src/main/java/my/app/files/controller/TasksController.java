@@ -48,4 +48,16 @@ public class TasksController {
         tasksService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{taskId}/labels/{labelId}")
+    public ResponseEntity<TaskDto> assignLabelToTask(@PathVariable Long taskId,
+                                                     @PathVariable Long labelId) {
+        return ResponseEntity.ok(tasksService.assignLabelToTask(taskId, labelId));
+    }
+
+    @DeleteMapping("/{taskId}/labels/{labelId}")
+    public ResponseEntity<TaskDto> removeLabelFromTask(@PathVariable Long taskId,
+                                                       @PathVariable Long labelId) {
+        return ResponseEntity.ok(tasksService.removeLabelFromTask(taskId, labelId));
+    }
 }

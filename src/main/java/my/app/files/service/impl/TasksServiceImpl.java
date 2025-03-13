@@ -6,15 +6,19 @@ import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
 import my.app.files.mapper.TaskMapper;
+import my.app.files.model.Label;
 import my.app.files.model.Project;
 import my.app.files.model.Task;
 import my.app.files.model.User;
+import my.app.files.repository.LabelRepository;
 import my.app.files.repository.ProjectRepository;
 import my.app.files.repository.TaskRepository;
 import my.app.files.repository.UserRepository;
 import my.app.files.service.TasksService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -24,6 +28,7 @@ public class TasksServiceImpl implements TasksService {
     private final TaskMapper taskMapper;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final LabelRepository labelRepository;
 
     @Override
     public TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto) {
@@ -43,10 +48,13 @@ public class TasksServiceImpl implements TasksService {
             throw new IllegalArgumentException("Project ID is required");
         }
 
-        Task savedTask = taskRepository.save(task);
-        return taskMapper.toDto(savedTask);
-    }
+        if (createTaskRequestDto.getLabelIds() != null) {
+            List<Label> labels = labelRepository.findAllById(createTaskRequestDto.getLabelIds());
+            task.setLabels(new HashSet<>(labels));
+        }
 
+        return taskMapper.toDto(taskRepository.save(task));
+    }
 
     @Override
     public List<TaskDto> retrieveTasksForAProject(Pageable pageable) {
@@ -83,5 +91,31 @@ public class TasksServiceImpl implements TasksService {
             throw new EntityNotFoundException("Task not found");
         }
         taskRepository.deleteById(id);
+    }
+
+    @Override
+    public TaskDto assignLabelToTask(Long taskId, Long labelId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        Label label = labelRepository.findById(labelId)
+                .orElseThrow(() -> new EntityNotFoundException("Label not found"));
+
+        task.getLabels().add(label);
+        taskRepository.save(task);
+
+        return taskMapper.toDto(task);
+    }
+
+    @Override
+    public TaskDto removeLabelFromTask(Long taskId, Long labelId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        Label label = labelRepository.findById(labelId)
+                .orElseThrow(() -> new EntityNotFoundException("Label not found"));
+
+        task.getLabels().remove(label);
+        taskRepository.save(task);
+
+        return taskMapper.toDto(task);
     }
 }
