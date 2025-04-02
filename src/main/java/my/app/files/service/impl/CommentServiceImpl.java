@@ -1,6 +1,7 @@
 package my.app.files.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.comment.CommentDto;
 import my.app.files.dto.comment.CreateCommentRequestDto;
@@ -13,8 +14,6 @@ import my.app.files.repository.TaskRepository;
 import my.app.files.repository.UserRepository;
 import my.app.files.service.CommentService;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -43,7 +42,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<CommentDto> getCommentsForTask(Long taskId){
+    public List<CommentDto> getCommentsForTask(Long taskId) {
         List<Comment> comments = commentRepository.findByTaskId(taskId);
         return comments.stream()
                 .map(commentMapper::toDto)
