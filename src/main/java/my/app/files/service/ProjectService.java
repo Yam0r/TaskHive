@@ -1,11 +1,10 @@
 package my.app.files.service;
 
+import java.util.List;
 import my.app.files.dto.project.CreateProjectRequestDto;
 import my.app.files.dto.project.ProjectDto;
 import my.app.files.dto.project.UpdateProjectRequestDto;
 import org.springframework.data.domain.Pageable;
-
-import java.util.List;
 
 public interface ProjectService {
     ProjectDto createANewProject(CreateProjectRequestDto createProjectRequestDto);

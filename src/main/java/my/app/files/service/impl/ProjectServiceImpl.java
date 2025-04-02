@@ -1,6 +1,7 @@
 package my.app.files.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.project.CreateProjectRequestDto;
 import my.app.files.dto.project.ProjectDto;
@@ -19,8 +20,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @RequiredArgsConstructor
 @Service
 public class ProjectServiceImpl implements ProjectService {
@@ -30,7 +29,8 @@ public class ProjectServiceImpl implements ProjectService {
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails userDetails)) {
+        if (authentication == null || !(authentication.getPrincipal()
+                instanceof UserDetails userDetails)) {
             throw new IllegalStateException("User not authenticated");
         }
         String email = userDetails.getUsername();
@@ -59,7 +59,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectDto retrieveProjectDetails(Long id) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: "
+                        + id));
         return projectMapper.toProjectDto(project);
     }
 
@@ -67,7 +68,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public void updateProject(Long id, UpdateProjectRequestDto requestDto) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: "
+                        + id));
 
         if (requestDto.getName() != null) {
             project.setName(requestDto.getName());
@@ -93,4 +95,3 @@ public class ProjectServiceImpl implements ProjectService {
         projectRepository.deleteById(id);
     }
 }
-

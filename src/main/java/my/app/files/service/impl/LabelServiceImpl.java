@@ -1,6 +1,7 @@
 package my.app.files.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.labels.CreateLabelRequestDto;
 import my.app.files.dto.labels.LabelDto;
@@ -10,8 +11,6 @@ import my.app.files.model.Label;
 import my.app.files.repository.LabelRepository;
 import my.app.files.service.LabelService;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -29,14 +28,14 @@ public class LabelServiceImpl implements LabelService {
     }
 
     @Override
-    public List<LabelDto> getAllLabels(){
+    public List<LabelDto> getAllLabels() {
         return labelRepository.findAll().stream()
                 .map(labelMapper::toDto)
                 .toList();
     }
 
     @Override
-    public LabelDto updateLabel(Long id, UpdateLabelRequestDto dto){
+    public LabelDto updateLabel(Long id, UpdateLabelRequestDto dto) {
         Label label = labelRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Label not found"));
         labelMapper.updateEntity(label, dto);
@@ -44,7 +43,7 @@ public class LabelServiceImpl implements LabelService {
     }
 
     @Override
-    public void deleteLabel(Long id){
+    public void deleteLabel(Long id) {
         if (!labelRepository.existsById(id)) {
             throw new EntityNotFoundException("Label not found");
         }

@@ -1,11 +1,10 @@
 package my.app.files.service;
 
-
+import java.util.List;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 
 public interface TasksService {
     TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto);

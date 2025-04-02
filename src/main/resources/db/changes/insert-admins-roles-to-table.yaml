@@ -6,9 +6,11 @@ databaseChangeLog:
         - insert:
             tableName: users_roles
             columns:
-              - column:
-                  name: user_id
-                  valueNumeric: "4"
-              - column:
-                  name: role_id
-                  valueNumeric: "2"
+              - column: { name: user_id, valueNumeric: 1 }
+              - column: { name: role_id, valueNumeric: 2 }
+        - insert:
+            tableName: users_roles
+            columns:
+              - column: { name: user_id, valueNumeric: 2 }
+              - column: { name: role_id, valueNumeric: 1 }
+
