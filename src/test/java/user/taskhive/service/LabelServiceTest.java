@@ -13,6 +13,8 @@ import java.util.Optional;
 import my.app.files.dto.labels.CreateLabelRequestDto;
 import my.app.files.dto.labels.LabelDto;
 import my.app.files.dto.labels.UpdateLabelRequestDto;
+import my.app.files.exception.LabelAlreadyExistsException;
+import my.app.files.exception.LabelNotFoundException;
 import my.app.files.mapper.LabelMapper;
 import my.app.files.model.Label;
 import my.app.files.repository.LabelRepository;
@@ -70,7 +72,7 @@ class LabelServiceTest {
         Label existingLabel = new Label();
         existingLabel.setName("Important");
         when(labelRepository.findByName(dto.getName())).thenReturn(Optional.of(existingLabel));
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+        LabelAlreadyExistsException thrown = assertThrows(LabelAlreadyExistsException.class, () -> {
             labelService.createLabel(dto);
         });
         assertThat(thrown.getMessage()).isEqualTo("Label with this name already exists");
@@ -106,7 +108,7 @@ class LabelServiceTest {
         UpdateLabelRequestDto updateDto = new UpdateLabelRequestDto();
         updateDto.setName("UpdatedName");
         when(labelRepository.findById(labelId)).thenReturn(Optional.empty());
-        EntityNotFoundException thrown = assertThrows(EntityNotFoundException.class, () -> {
+        LabelNotFoundException thrown = assertThrows(LabelNotFoundException.class, () -> {
             labelService.updateLabel(labelId, updateDto);
         });
         assertThat(thrown.getMessage()).isEqualTo("Label not found");
@@ -128,7 +130,7 @@ class LabelServiceTest {
 
         when(labelRepository.existsById(labelId)).thenReturn(false);
 
-        EntityNotFoundException thrown = assertThrows(EntityNotFoundException.class, () -> {
+        LabelNotFoundException thrown = assertThrows(LabelNotFoundException.class, () -> {
             labelService.deleteLabel(labelId);
         });
         assertThat(thrown.getMessage()).isEqualTo("Label not found");

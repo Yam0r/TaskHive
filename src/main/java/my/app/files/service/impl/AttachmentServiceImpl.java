@@ -6,16 +6,18 @@ import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.UploadBuilder;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import java.io.InputStream;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 import my.app.files.dto.attachment.AttachmentDto;
+import my.app.files.mapper.AttachmentMapper;
 import my.app.files.model.Attachment;
 import my.app.files.model.Task;
 import my.app.files.repository.AttachmentRepository;
 import my.app.files.repository.TaskRepository;
 import my.app.files.service.AttachmentService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,9 +26,11 @@ public class AttachmentServiceImpl implements AttachmentService {
     private final AttachmentRepository attachmentRepository;
     private final TaskRepository taskRepository;
     private final DbxClientV2 dropboxClient;
+    private final AttachmentMapper attachmentMapper;
 
     public AttachmentServiceImpl(AttachmentRepository attachmentRepository,
-                                 TaskRepository taskRepository) {
+                                 TaskRepository taskRepository,
+                                 AttachmentMapper attachmentMapper) {
         Dotenv dotenv = Dotenv.load();
         String appName = dotenv.get("MY_APP_NAME");
         String accessToken = dotenv.get("MY_DROPBOX_ACCESS_TOKEN");
@@ -36,9 +40,11 @@ public class AttachmentServiceImpl implements AttachmentService {
 
         this.attachmentRepository = attachmentRepository;
         this.taskRepository = taskRepository;
+        this.attachmentMapper = attachmentMapper;
     }
 
     @Override
+    @Transactional
     public AttachmentDto uploadAttachment(Long taskId, MultipartFile file) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
@@ -56,20 +62,15 @@ public class AttachmentServiceImpl implements AttachmentService {
 
             attachmentRepository.save(attachment);
 
-            return new AttachmentDto(attachment.getId(), attachment.getFilename(),
-                    attachment.getDropboxFileId(), attachment.getUploadDate());
+            return attachmentMapper.toDto(attachment);
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload file", e);
         }
     }
 
     @Override
-    public List<AttachmentDto> getAttachmentsForTask(Long taskId) {
-        List<Attachment> attachments = attachmentRepository.findByTaskId(taskId);
-
-        return attachments.stream()
-                .map(a -> new AttachmentDto(a.getId(), a.getFilename(),
-                        a.getDropboxFileId(), a.getUploadDate()))
-                .collect(Collectors.toList());
+    public Page<AttachmentDto> getAttachmentsForTask(Long taskId, Pageable pageable) {
+        Page<Attachment> attachments = attachmentRepository.findByTaskId(taskId, pageable);
+        return attachments.map(attachmentMapper::toDto);
     }
 }

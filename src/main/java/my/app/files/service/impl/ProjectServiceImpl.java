@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import my.app.files.dto.project.CreateProjectRequestDto;
 import my.app.files.dto.project.ProjectDto;
 import my.app.files.dto.project.UpdateProjectRequestDto;
+import my.app.files.exception.ProjectNotFoundException;
+import my.app.files.exception.UserNotAuthenticatedException;
 import my.app.files.mapper.ProjectMapper;
 import my.app.files.model.Project;
 import my.app.files.model.User;
@@ -13,7 +15,6 @@ import my.app.files.repository.ProjectRepository;
 import my.app.files.repository.UserRepository;
 import my.app.files.service.ProjectService;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,7 +32,7 @@ public class ProjectServiceImpl implements ProjectService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal()
                 instanceof UserDetails userDetails)) {
-            throw new IllegalStateException("User not authenticated");
+            throw new UserNotAuthenticatedException("User not authenticated");
         }
         String email = userDetails.getUsername();
         return userRepository.findByEmail(email)
@@ -59,7 +60,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectDto retrieveProjectDetails(Long id) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: "
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: "
                         + id));
         return projectMapper.toProjectDto(project);
     }
@@ -68,21 +69,10 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public void updateProject(Long id, UpdateProjectRequestDto requestDto) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: "
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: "
                         + id));
 
-        if (requestDto.getName() != null) {
-            project.setName(requestDto.getName());
-        }
-        if (requestDto.getDescription() != null) {
-            project.setDescription(requestDto.getDescription());
-        }
-        if (requestDto.getStartDate() != null) {
-            project.setStartDate(requestDto.getStartDate());
-        }
-        if (requestDto.getEndDate() != null) {
-            project.setEndDate(requestDto.getEndDate());
-        }
+        projectMapper.updateProjectFromDto(requestDto, project);
         projectRepository.save(project);
     }
 
@@ -90,7 +80,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public void deleteProject(Long id) {
         if (!projectRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Project not found with id: " + id);
+            throw new ProjectNotFoundException("Project not found with id: " + id);
         }
         projectRepository.deleteById(id);
     }

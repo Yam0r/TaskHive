@@ -8,6 +8,6 @@ import my.app.files.model.Role.RoleName;
 @Getter
 @Setter
 public class UpdateUserRoleRequestDto {
-    @NotNull
+    @NotNull(message = "New role is required")
     private RoleName newRole;
 }

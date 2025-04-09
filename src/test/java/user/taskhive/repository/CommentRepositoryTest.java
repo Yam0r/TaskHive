@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +37,9 @@ public class CommentRepositoryTest {
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @Test
     void shouldFindCommentsByTaskId() {
-        List<Comment> comments = commentRepository.findByTaskId(1L);
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Comment> commentPage = commentRepository.findByTaskId(1L, pageable);
+        List<Comment> comments = commentPage.getContent();
 
         assertThat(comments).isNotEmpty();
         assertThat(comments.size()).isEqualTo(2);
@@ -43,7 +48,8 @@ public class CommentRepositoryTest {
 
     @Test
     void shouldReturnEmptyListIfNoCommentsFound() {
-        List<Comment> comments = commentRepository.findByTaskId(999L);
-        assertThat(comments).isEmpty();
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Comment> commentPage = commentRepository.findByTaskId(999L, pageable);
+        assertThat(commentPage.getContent()).isEmpty();
     }
 }

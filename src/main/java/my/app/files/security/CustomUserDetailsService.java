@@ -1,8 +1,6 @@
 package my.app.files.security;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import my.app.files.model.Role;
 import my.app.files.model.User;
 import my.app.files.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,13 +17,14 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException(NOT_FOUND_EMAIL_MESSAGE + email));
+                .filter(u -> !u.isDeleted())
+                .orElseThrow(() -> new UsernameNotFoundException(NOT_FOUND_EMAIL_MESSAGE + email));
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
                 .roles(user.getRoles().stream()
-                        .map(Role::getAuthority)
+                        .map(role -> role.getRole().name())
                         .toArray(String[]::new))
                 .build();
     }
