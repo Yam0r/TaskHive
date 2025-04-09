@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,7 +52,9 @@ public class AttachmentRepositoryTest {
         attachment.setUploadDate(LocalDateTime.now());
         attachmentRepository.save(attachment);
 
-        List<Attachment> attachments = attachmentRepository.findByTaskId(task.getId());
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Attachment> attachments = attachmentRepository.findByTaskId(task.getId(), pageable)
+                .getContent();
 
         assertThat(attachments).isNotEmpty();
         assertThat(attachments.size()).isEqualTo(1);
@@ -61,7 +65,10 @@ public class AttachmentRepositoryTest {
 
     @Test
     void shouldReturnEmptyListIfNoAttachmentsFound() {
-        List<Attachment> attachments = attachmentRepository.findByTaskId(999L);
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Attachment> attachments = attachmentRepository.findByTaskId(999L, pageable)
+                .getContent();
+
         assertThat(attachments).isEmpty();
     }
 }

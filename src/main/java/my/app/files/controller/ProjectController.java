@@ -10,6 +10,7 @@ import my.app.files.dto.project.ProjectDto;
 import my.app.files.dto.project.UpdateProjectRequestDto;
 import my.app.files.service.ProjectService;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +35,8 @@ public class ProjectController {
     @PostMapping
     public ResponseEntity<ProjectDto> createANewProject(@RequestBody @Valid
                                                             CreateProjectRequestDto requestDto) {
-        return ResponseEntity.ok(projectService.createANewProject(requestDto));
+        ProjectDto createdProject = projectService.createANewProject(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
 
     @Operation(summary = "Get user projects",
@@ -56,8 +58,8 @@ public class ProjectController {
             description = "Updates an existing project by its ID.")
     @PutMapping("/{id}")
     public ResponseEntity<Void> updateProject(@PathVariable Long id,
-                                              @RequestBody
-                                              @Valid UpdateProjectRequestDto requestDto) {
+                                              @RequestBody @Valid UpdateProjectRequestDto
+                                                      requestDto) {
         projectService.updateProject(id, requestDto);
         return ResponseEntity.noContent().build();
     }

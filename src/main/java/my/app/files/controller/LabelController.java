@@ -9,6 +9,7 @@ import my.app.files.dto.labels.CreateLabelRequestDto;
 import my.app.files.dto.labels.LabelDto;
 import my.app.files.dto.labels.UpdateLabelRequestDto;
 import my.app.files.service.LabelService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +30,8 @@ public class LabelController {
     @Operation(summary = "Create a label", description = "Creates a new label.")
     @PostMapping
     public ResponseEntity<LabelDto> createLabel(@Valid @RequestBody CreateLabelRequestDto dto) {
-        return ResponseEntity.ok(labelService.createLabel(dto));
+        LabelDto createdLabel = labelService.createLabel(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdLabel);
     }
 
     @Operation(summary = "Get all labels", description = "Retrieves a list of all labels.")
@@ -42,7 +44,8 @@ public class LabelController {
     @PutMapping("/{id}")
     public ResponseEntity<LabelDto> updateLabel(@PathVariable Long id,
                                                 @Valid @RequestBody UpdateLabelRequestDto dto) {
-        return ResponseEntity.ok(labelService.updateLabel(id, dto));
+        LabelDto updatedLabel = labelService.updateLabel(id, dto);
+        return ResponseEntity.ok(updatedLabel);
     }
 
     @Operation(summary = "Delete a label", description = "Deletes a label by its ID.")

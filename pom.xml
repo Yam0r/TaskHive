@@ -6,7 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.4.2</version>
-        <relativePath/> <!-- lookup parent from my.app.files.repository -->
+        <relativePath/>
     </parent>
     <groupId>User</groupId>
     <artifactId>TaskHive</artifactId>
@@ -30,6 +30,9 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <jjwt-api.version>0.11.5</jjwt-api.version>
         <java.version>17</java.version>
+        <db.url>mysql://mysqldb:3307/TaskHive</db.url>
+        <db.user>Admin</db.user>
+        <db.password>admin</db.password>
     </properties>
     <dependencies>
         <dependency>
@@ -257,7 +260,7 @@
             <plugin>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>4.27.0</version> <!-- Убедись, что версия актуальная -->
+                <version>4.27.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -266,11 +269,11 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <url>jdbc:mysql://localhost:3306/TaskHive</url> <!-- URL к твоей базе данных -->
-                    <username>Admin</username>
-                    <password>admin</password>
+                    <url>${db.url}</url>
+                    <username>${db.user}</username>
+                    <password>${db.password}</password>
                     <driver>com.mysql.cj.jdbc.Driver</driver>
-                    <changeLogFile>src/main/resources/db/db.changelog-master.yaml</changeLogFile> <!-- Путь к changelog -->
+                    <changeLogFile>src/main/resources/db/db.changelog-master.yaml</changeLogFile>
                 </configuration>
             </plugin>
         </plugins>

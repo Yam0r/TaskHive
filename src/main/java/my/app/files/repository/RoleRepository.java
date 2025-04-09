@@ -1,4 +1,4 @@
-package my.app.files.rolerepository;
+package my.app.files.repository;
 
 import java.util.Optional;
 import my.app.files.model.Role;

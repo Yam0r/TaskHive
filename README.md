@@ -12,15 +12,57 @@ This project was built for educational purposes to practice skills in Spring Boo
 
 ## 🛠️ Technologies & Tools
 
-- **Spring Boot** — Main framework for building the REST API.
-- **Spring Security** — Secures the API with authentication and authorization.
-- **Spring Data JPA** — Handles database interaction.
-- **MySQL** — Main relational database.
-- **Liquibase** — Manages database migrations.
-- **Dropbox SDK** — For uploading and retrieving files from Dropbox.
-- **JUnit + MockMvc** — For unit and integration testing.
-- **Swagger** — API documentation and testing tool.
+- **Spring Boot 3.4.2** — Main framework for building the REST API.
+- **Spring Security (from Spring Boot 3.4.2)** — Secures the API with authentication and authorization.
+- **Spring Data JPA (from Spring Boot 3.4.2)** — Handles database interaction.
+- **MySQL 8.3.0** — Main relational database.
+- **Liquibase 4.24.0** — Manages database migrations.
+- **Dropbox SDK 7.0.0** — For uploading and retrieving files from Dropbox.
+- **JUnit 5 + MockMvc 5.1.1** — For unit and integration testing.
+- **Swagger (Springdoc OpenAPI 2.8.5 + Springfox UI 3.0.0)** — API documentation and testing tool.
 - **Docker + Docker Compose** — For containerization and easy environment setup.
+
+---
+
+## 📌 REST API Endpoints
+
+### 🔐 Auth
+- `POST /api/auth/register` — User registration
+- `POST /api/auth/login` — User authentication
+
+### 👤 Users
+- `PUT /api/users/{id}/role` — Update user role (admin only)
+- `GET /api/users/me` — Get current user profile info
+- `PUT /api/users/me` — Update current user profile
+- `PATCH /api/users/me` — Partially update current user profile
+
+### 📁 Projects
+- `POST /api/projects` — Create a new project
+- `GET /api/projects` — Retrieve all user projects
+- `GET /api/projects/{id}` — Retrieve project details
+- `PUT /api/projects/{id}` — Update project
+- `DELETE /api/projects/{id}` — Delete project
+
+### ✅ Tasks
+- `POST /api/tasks` — Create a new task
+- `GET /api/tasks` — Retrieve tasks (optional filters by project, status, etc.)
+- `GET /api/tasks/{id}` — Retrieve task details
+- `PUT /api/tasks/{id}` — Update task
+- `DELETE /api/tasks/{id}` — Delete task
+
+### 💬 Comments
+- `POST /api/comments` — Add a comment to a task
+- `GET /api/comments?taskId={taskId}` — Retrieve comments for a task
+
+### 📎 Attachments
+- `POST /api/attachments` — Upload an attachment to a task (uploaded to Dropbox, ID stored in DB)
+- `GET /api/attachments?taskId={taskId}` — Retrieve attachments for a task (Dropbox files via stored IDs)
+
+### 🏷️ Labels
+- `POST /api/labels` — Create a new label
+- `GET /api/labels` — Retrieve all labels
+- `PUT /api/labels/{id}` — Update label
+- `DELETE /api/labels/{id}` — Delete label
 
 ---
 

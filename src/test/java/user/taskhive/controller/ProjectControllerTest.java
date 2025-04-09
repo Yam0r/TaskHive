@@ -73,7 +73,7 @@ public class ProjectControllerTest {
                                 + "\"description\": \"A description\", "
                                 + "\"startDate\": \"2025-03-21\", "
                                 + "\"endDate\": \"2025-06-21\"}"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("New Project"))
                 .andExpect(jsonPath("$.description").value("A description"))
                 .andExpect(jsonPath("$.startDate").value("2025-03-21"))

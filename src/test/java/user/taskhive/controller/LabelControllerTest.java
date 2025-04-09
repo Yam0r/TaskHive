@@ -67,7 +67,7 @@ public class LabelControllerTest {
         mockMvc.perform(post("/labels")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"LabelTest\", \"color\":\"blue\"}"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("LabelTest"))
                 .andExpect(jsonPath("$.color").value("blue"));
 

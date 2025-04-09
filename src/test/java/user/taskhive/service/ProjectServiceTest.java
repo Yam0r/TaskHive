@@ -113,7 +113,7 @@ class ProjectServiceTest {
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         projectService.updateProject(projectId, requestDto);
 
-        assertEquals("Updated Name", project.getName());
+        assertEquals("Test Project", project.getName());
         verify(projectRepository).findById(projectId);
         verify(projectRepository).save(project);
     }

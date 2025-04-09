@@ -20,6 +20,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.jdbc.Sql;
 
 @SpringBootTest
@@ -114,8 +118,11 @@ public class CommentServiceTest {
         comment2.setText("second text");
         comment2.setTask(task);
 
-        List<Comment> comments = List.of(comment1, comment2);
-        Mockito.when(commentRepository.findByTaskId(1L)).thenReturn(comments);
+        List<Comment> commentList = List.of(comment1, comment2);
+        Page<Comment> commentPage = new PageImpl<>(commentList);
+
+        Pageable pageable = PageRequest.of(0, 10);
+        Mockito.when(commentRepository.findByTaskId(1L, pageable)).thenReturn(commentPage);
 
         CommentDto commentDto1 = new CommentDto();
         commentDto1.setContent("First comment");
@@ -128,17 +135,17 @@ public class CommentServiceTest {
         Mockito.when(commentMapper.toDto(comment1)).thenReturn(commentDto1);
         Mockito.when(commentMapper.toDto(comment2)).thenReturn(commentDto2);
 
-        List<CommentDto> commentDtos = commentService.getCommentsForTask(1L);
+        Page<CommentDto> commentDtoPage = commentService.getCommentsForTask(1L, pageable);
 
-        assertThat(commentDtos).isNotEmpty();
-        assertThat(commentDtos.size()).isEqualTo(2);
+        assertThat(commentDtoPage).isNotNull();
+        assertThat(commentDtoPage.getContent()).hasSize(2);
 
-        CommentDto commentDtoResult1 = commentDtos.get(0);
-        assertThat(commentDtoResult1.getContent()).isEqualTo("First comment");
-        assertThat(commentDtoResult1.getText()).isEqualTo("first text");
+        CommentDto dto1 = commentDtoPage.getContent().get(0);
+        assertThat(dto1.getContent()).isEqualTo("First comment");
+        assertThat(dto1.getText()).isEqualTo("first text");
 
-        CommentDto commentDtoResult2 = commentDtos.get(1);
-        assertThat(commentDtoResult2.getContent()).isEqualTo("Second comment");
-        assertThat(commentDtoResult2.getText()).isEqualTo("second text");
+        CommentDto dto2 = commentDtoPage.getContent().get(1);
+        assertThat(dto2.getContent()).isEqualTo("Second comment");
+        assertThat(dto2.getText()).isEqualTo("second text");
     }
 }

@@ -6,6 +6,7 @@ import com.dropbox.core.v2.DbxClientV2;
 import java.util.Arrays;
 import java.util.List;
 import my.app.files.dto.attachment.AttachmentDto;
+import my.app.files.mapper.AttachmentMapper;
 import my.app.files.model.Attachment;
 import my.app.files.model.Task;
 import my.app.files.repository.AttachmentRepository;
@@ -17,6 +18,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 public class AttachmentServiceTest {
@@ -29,6 +33,9 @@ public class AttachmentServiceTest {
 
     @Mock
     private DbxClientV2 dropboxClient;
+
+    @Mock
+    private AttachmentMapper attachmentMapper;
 
     @InjectMocks
     private AttachmentServiceImpl attachmentService;
@@ -52,13 +59,30 @@ public class AttachmentServiceTest {
         attachment2.setTask(task);
 
         List<Attachment> attachments = Arrays.asList(attachment1, attachment2);
+        Page<Attachment> attachmentPage = new PageImpl<>(attachments);
 
-        Mockito.when(attachmentRepository.findByTaskId(taskId)).thenReturn(attachments);
+        Mockito.when(attachmentRepository.findByTaskId(Mockito.anyLong(),
+                        Mockito.any(Pageable.class)))
+                .thenReturn(attachmentPage);
 
-        List<AttachmentDto> attachmentDtos = attachmentService.getAttachmentsForTask(taskId);
+        Mockito.when(attachmentMapper.toDto(Mockito.any(Attachment.class)))
+                .thenAnswer(invocation -> {
+                    Attachment attachment = invocation.getArgument(0);
+                    AttachmentDto dto = new AttachmentDto(); // без параметров
+                    dto.setId(attachment.getId());
+                    dto.setFilename(attachment.getFilename());
+                    dto.setDropboxFileId(attachment.getDropboxFileId());
+                    dto.setUploadDate(attachment.getUploadDate());
+                    return dto;
+                });
 
-        assertThat(attachmentDtos).hasSize(2);
-        assertThat(attachmentDtos.get(0).getFilename()).isEqualTo("test-file-1.txt");
-        assertThat(attachmentDtos.get(1).getFilename()).isEqualTo("test-file-2.txt");
+        Page<AttachmentDto> attachmentDtos = attachmentService.getAttachmentsForTask(taskId,
+                Pageable.unpaged());
+
+        assertThat(attachmentDtos.getContent()).hasSize(2);
+        assertThat(attachmentDtos.getContent().get(0).getFilename()).isEqualTo("test-file-1.txt");
+        assertThat(attachmentDtos.getContent().get(1).getFilename()).isEqualTo("test-file-2.txt");
+        assertThat(attachmentDtos.getContent().get(0).getId()).isEqualTo(1L);
+        assertThat(attachmentDtos.getContent().get(1).getId()).isEqualTo(2L);
     }
 }
