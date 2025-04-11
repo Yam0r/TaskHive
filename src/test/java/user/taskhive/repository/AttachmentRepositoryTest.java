@@ -2,7 +2,6 @@ package user.taskhive.repository;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import my.app.files.model.Attachment;
 import my.app.files.model.Project;
@@ -18,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
+import user.taskhive.config.TestDataUtil;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -37,19 +37,12 @@ public class AttachmentRepositoryTest {
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @Test
     void shouldFindAttachmentsByTaskId() {
-        Project project = new Project();
-        project.setId(2L);
-
-        Task task = new Task();
-        task.setName("Test Task");
-        task.setProject(project);
+        Project project = TestDataUtil.createTestProject(2L);
+        Task task = TestDataUtil.createTestTask(project, "Test Task");
         taskRepository.save(task);
 
-        Attachment attachment = new Attachment();
-        attachment.setTask(task);
-        attachment.setFilename("test-file.txt");
-        attachment.setDropboxFileId("dropbox-file-id");
-        attachment.setUploadDate(LocalDateTime.now());
+        Attachment attachment = TestDataUtil.createTestAttachment(task, "test-file.txt",
+                "dropbox-file-id");
         attachmentRepository.save(attachment);
 
         Pageable pageable = PageRequest.of(0, 10);

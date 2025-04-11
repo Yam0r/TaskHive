@@ -22,6 +22,7 @@ import my.app.files.repository.UserRepository;
 import my.app.files.service.TasksService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -48,6 +49,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto) {
         Task task = taskMapper.toEntity(createTaskRequestDto);
 
@@ -77,6 +79,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public TaskDto retrieveTaskDetails(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
@@ -84,6 +87,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public void updateTask(Long id, UpdateTaskRequestDto updateTaskRequestDto) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
@@ -97,6 +101,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public void deleteTask(Long id) {
         if (!taskRepository.existsById(id)) {
             throw new TaskNotFoundException("Task not found");
@@ -105,6 +110,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public TaskDto assignLabelToTask(Long taskId, Long labelId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
@@ -117,6 +123,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public TaskDto removeLabelFromTask(Long taskId, Long labelId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));

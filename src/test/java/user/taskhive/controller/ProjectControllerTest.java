@@ -64,7 +64,7 @@ public class ProjectControllerTest {
         projectDto.setStartDate(LocalDate.of(2025, 3, 21));
         projectDto.setEndDate(LocalDate.of(2025, 6, 21));
 
-        when(projectService.createANewProject(any(CreateProjectRequestDto.class)))
+        when(projectService.createANewProject(any(CreateProjectRequestDto.class), any()))
                 .thenReturn(projectDto);
 
         mockMvc.perform(post("/projects")
@@ -80,7 +80,7 @@ public class ProjectControllerTest {
                 .andExpect(jsonPath("$.endDate").value("2025-06-21"));
 
         verify(projectService, times(1))
-                .createANewProject(any(CreateProjectRequestDto.class));
+                .createANewProject(any(CreateProjectRequestDto.class), any());
     }
 
     @WithMockUser(username = "TestUser", roles = "USER")

@@ -30,7 +30,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.context.jdbc.Sql;
+import user.taskhive.config.TestDataUtil;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
@@ -62,8 +62,7 @@ class ProjectServiceTest {
         testUser.setId(1L);
         testUser.setEmail("testuser@example.com");
 
-        project = new Project();
-        project.setId(1L);
+        project = TestDataUtil.createTestProject(1L);
         project.setName("Test Project");
         project.setUser(testUser);
 
@@ -129,43 +128,29 @@ class ProjectServiceTest {
         verify(projectRepository).deleteById(projectId);
     }
 
-    @Sql(scripts = "classpath:database/project/add-test-project.sql",
-            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-    @Sql(scripts = "classpath:database/project/clear-db-for-project.sql",
-            executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @Test
     void testCreateANewProject() {
-        setUpAuthentication();
-
-        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
         when(projectMapper.toProject(requestDto)).thenReturn(project);
         when(projectRepository.save(any(Project.class))).thenReturn(project);
         when(projectMapper.toProjectDto(any(Project.class))).thenReturn(projectDto);
 
-        ProjectDto result = projectService.createANewProject(requestDto);
+        ProjectDto result = projectService.createANewProject(requestDto, testUser);
 
         assertNotNull(result);
         assertEquals("Test Project", result.getName());
         verify(projectRepository, times(1)).save(any(Project.class));
-        verify(userRepository, times(1)).findByEmail(testUser.getEmail());
     }
 
-    @Sql(scripts = "classpath:database/project/add-test-project.sql",
-            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-    @Sql(scripts = "classpath:database/project/clear-db-for-project.sql",
-            executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @Test
     void testRetrieveUsersProjects() {
-        setUpAuthentication();
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(projectRepository.findByUserId(eq(testUser.getId()), eq(pageable)))
+                .thenReturn(List.of(project));
+        when(projectMapper.toProjectDto(any(Project.class))).thenReturn(projectDto);
 
-        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
-        when(projectRepository.findByUserId(eq(testUser.getId()),
-                eq(PageRequest.of(0, 10)))).thenReturn(List.of(new Project()));
-
-        var result = projectService.retrieveUsersProjects(PageRequest.of(0, 10));
+        var result = projectService.retrieveUsersProjects(pageable, testUser);
 
         assertEquals(1, result.size());
-        verify(projectRepository, times(1)).findByUserId(eq(testUser.getId()),
-                eq(PageRequest.of(0, 10)));
+        verify(projectRepository, times(1)).findByUserId(eq(testUser.getId()), eq(pageable));
     }
 }
