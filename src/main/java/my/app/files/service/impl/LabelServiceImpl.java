@@ -13,6 +13,7 @@ import my.app.files.model.Label;
 import my.app.files.repository.LabelRepository;
 import my.app.files.service.LabelService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -21,6 +22,7 @@ public class LabelServiceImpl implements LabelService {
     private final LabelMapper labelMapper;
 
     @Override
+    @Transactional
     public LabelDto createLabel(CreateLabelRequestDto dto) {
         labelRepository.findByName(dto.getName())
                 .ifPresent(label -> {
@@ -39,6 +41,7 @@ public class LabelServiceImpl implements LabelService {
     }
 
     @Override
+    @Transactional
     public LabelDto updateLabel(Long id, UpdateLabelRequestDto dto) {
         Label label = labelRepository.findById(id)
                 .orElseThrow(() -> new LabelNotFoundException("Label not found"));
@@ -47,6 +50,7 @@ public class LabelServiceImpl implements LabelService {
     }
 
     @Override
+    @Transactional
     public void deleteLabel(Long id) {
         if (!labelRepository.existsById(id)) {
             throw new LabelNotFoundException("Label not found");

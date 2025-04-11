@@ -8,10 +8,12 @@ import lombok.RequiredArgsConstructor;
 import my.app.files.dto.project.CreateProjectRequestDto;
 import my.app.files.dto.project.ProjectDto;
 import my.app.files.dto.project.UpdateProjectRequestDto;
+import my.app.files.model.User;
 import my.app.files.service.ProjectService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,9 +23,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Project",
-        description = "Manages user projects, including creation, "
-                + "retrieval, updating, and deletion.")
+@Tag(name = "Project", description = "Manages user projects, including creation, "
+        + "retrieval, updating, and deletion.")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/projects")
@@ -33,18 +34,21 @@ public class ProjectController {
     @Operation(summary = "Create a new project",
             description = "Creates a new project for the user.")
     @PostMapping
-    public ResponseEntity<ProjectDto> createANewProject(@RequestBody @Valid
-                                                            CreateProjectRequestDto requestDto) {
-        ProjectDto createdProject = projectService.createANewProject(requestDto);
+    public ResponseEntity<ProjectDto> createANewProject(
+            @RequestBody @Valid CreateProjectRequestDto requestDto,
+            @AuthenticationPrincipal User user) {
+        ProjectDto createdProject = projectService.createANewProject(requestDto, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
 
     @Operation(summary = "Get user projects",
-            description = "Retrieves a paginated list "
-                    + "of projects belonging to the authenticated user.")
+            description = "Retrieves a paginated list of projects belonging "
+                    + "to the authenticated user.")
     @GetMapping
-    public ResponseEntity<List<ProjectDto>> retrieveUsersProjects(Pageable pageable) {
-        return ResponseEntity.ok(projectService.retrieveUsersProjects(pageable));
+    public ResponseEntity<List<ProjectDto>> retrieveUsersProjects(
+            Pageable pageable,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(projectService.retrieveUsersProjects(pageable, user));
     }
 
     @Operation(summary = "Get project details",
@@ -54,12 +58,11 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.retrieveProjectDetails(id));
     }
 
-    @Operation(summary = "Update a project",
-            description = "Updates an existing project by its ID.")
+    @Operation(summary = "Update a project", description = "Updates an existing project by its ID.")
     @PutMapping("/{id}")
-    public ResponseEntity<Void> updateProject(@PathVariable Long id,
-                                              @RequestBody @Valid UpdateProjectRequestDto
-                                                      requestDto) {
+    public ResponseEntity<Void> updateProject(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateProjectRequestDto requestDto) {
         projectService.updateProject(id, requestDto);
         return ResponseEntity.noContent().build();
     }

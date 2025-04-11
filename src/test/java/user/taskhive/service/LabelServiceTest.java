@@ -3,12 +3,12 @@ package user.taskhive.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import jakarta.persistence.EntityNotFoundException;
 import java.util.Optional;
 import my.app.files.dto.labels.CreateLabelRequestDto;
 import my.app.files.dto.labels.LabelDto;
@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import user.taskhive.config.TestDataUtil;
 
 @ExtendWith(MockitoExtension.class)
 class LabelServiceTest {
@@ -47,8 +48,7 @@ class LabelServiceTest {
         dto = new CreateLabelRequestDto();
         dto.setName("Important");
 
-        label = new Label();
-        label.setName("Important");
+        label = TestDataUtil.createTestLabel("Important", "Red");
 
         labelDto = new LabelDto();
         labelDto.setName("Important");
@@ -60,7 +60,9 @@ class LabelServiceTest {
         when(labelMapper.toEntity(dto)).thenReturn(label);
         when(labelRepository.save(label)).thenReturn(label);
         when(labelMapper.toDto(label)).thenReturn(labelDto);
+
         LabelDto createdLabel = labelService.createLabel(dto);
+
         assertThat(createdLabel).isNotNull();
         assertThat(createdLabel.getName()).isEqualTo("Important");
         verify(labelRepository, times(1)).findByName(dto.getName());
@@ -69,12 +71,14 @@ class LabelServiceTest {
 
     @Test
     void shouldThrowExceptionWhenLabelAlreadyExists() {
-        Label existingLabel = new Label();
-        existingLabel.setName("Important");
+        Label existingLabel = TestDataUtil.createTestLabel("Important", "Red");
+
         when(labelRepository.findByName(dto.getName())).thenReturn(Optional.of(existingLabel));
+
         LabelAlreadyExistsException thrown = assertThrows(LabelAlreadyExistsException.class, () -> {
             labelService.createLabel(dto);
         });
+
         assertThat(thrown.getMessage()).isEqualTo("Label with this name already exists");
         verify(labelRepository, times(1)).findByName(dto.getName());
         verify(labelRepository, never()).save(any());
@@ -83,23 +87,34 @@ class LabelServiceTest {
     @Test
     void shouldUpdateLabel() {
         final Long labelId = 1L;
+
         UpdateLabelRequestDto updateDto = new UpdateLabelRequestDto();
         updateDto.setName("UpdatedName");
-        Label labelToUpdate = new Label();
-        labelToUpdate.setName("OldName");
-        Label updatedLabel = new Label();
-        updatedLabel.setName("UpdatedName");
-        LabelDto updatedLabelDto = new LabelDto();
-        updatedLabelDto.setName("UpdatedName");
+        updateDto.setColor("Red");
+
+        Label labelToUpdate = TestDataUtil.createTestLabel("OldName", "Blue");
+
         when(labelRepository.findById(labelId)).thenReturn(Optional.of(labelToUpdate));
-        when(labelMapper.toDto(updatedLabel)).thenReturn(updatedLabelDto);
-        when(labelRepository.save(labelToUpdate)).thenReturn(updatedLabel);
-        labelMapper.updateEntity(labelToUpdate, updateDto);
-        LabelDto result = labelService.updateLabel(labelId, updateDto);
-        assertThat(result).isNotNull();
-        assertThat(result.getName()).isEqualTo("UpdatedName");
+
+        when(labelRepository.save(labelToUpdate)).thenReturn(labelToUpdate);
+
+        doAnswer(invocation -> {
+            labelToUpdate.setName(updateDto.getName());
+            labelToUpdate.setColor(updateDto.getColor());
+            return null;
+        }).when(labelMapper).updateEntity(labelToUpdate, updateDto);
+
+        when(labelMapper.toDto(labelToUpdate)).thenReturn(new LabelDto());
+
+        LabelDto updatedLabelDto = labelService.updateLabel(labelId, updateDto);
+
+        assertThat(labelToUpdate.getName()).isEqualTo("UpdatedName");
+        assertThat(labelToUpdate.getColor()).isEqualTo("Red");
+
         verify(labelRepository, times(1)).findById(labelId);
         verify(labelRepository, times(1)).save(labelToUpdate);
+        verify(labelMapper, times(1)).updateEntity(labelToUpdate, updateDto);
+        verify(labelMapper, times(1)).toDto(labelToUpdate);
     }
 
     @Test
@@ -107,10 +122,13 @@ class LabelServiceTest {
         Long labelId = 1L;
         UpdateLabelRequestDto updateDto = new UpdateLabelRequestDto();
         updateDto.setName("UpdatedName");
+
         when(labelRepository.findById(labelId)).thenReturn(Optional.empty());
+
         LabelNotFoundException thrown = assertThrows(LabelNotFoundException.class, () -> {
             labelService.updateLabel(labelId, updateDto);
         });
+
         assertThat(thrown.getMessage()).isEqualTo("Label not found");
         verify(labelRepository, times(1)).findById(labelId);
         verify(labelRepository, never()).save(any());
@@ -120,22 +138,23 @@ class LabelServiceTest {
     void shouldDeleteLabel() {
         Long labelId = 1L;
         when(labelRepository.existsById(labelId)).thenReturn(true);
+
         labelService.deleteLabel(labelId);
+
         verify(labelRepository, times(1)).deleteById(labelId);
     }
 
     @Test
     void shouldThrowExceptionWhenLabelNotFoundForDelete() {
         Long labelId = 1L;
-
         when(labelRepository.existsById(labelId)).thenReturn(false);
 
         LabelNotFoundException thrown = assertThrows(LabelNotFoundException.class, () -> {
             labelService.deleteLabel(labelId);
         });
+
         assertThat(thrown.getMessage()).isEqualTo("Label not found");
         verify(labelRepository, times(1)).existsById(labelId);
         verify(labelRepository, never()).deleteById(any());
     }
 }
-

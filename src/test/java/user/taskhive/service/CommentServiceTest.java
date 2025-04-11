@@ -1,6 +1,10 @@
 package user.taskhive.service;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
@@ -18,13 +22,13 @@ import my.app.files.service.impl.CommentServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.jdbc.Sql;
+import user.taskhive.config.TestDataUtil;
 
 @SpringBootTest
 public class CommentServiceTest {
@@ -51,9 +55,8 @@ public class CommentServiceTest {
         dto.setUserId(1L);
         dto.setContent("This is a new comment.");
 
-        Task task = new Task();
-        task.setId(1L);
-
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L),
+                "Test Task");
         User user = new User();
         user.setId(1L);
 
@@ -65,20 +68,20 @@ public class CommentServiceTest {
         CommentDto commentDto = new CommentDto();
         commentDto.setContent("This is a new comment.");
 
-        Mockito.when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        Mockito.when(commentMapper.toEntity(dto)).thenReturn(comment);
-        Mockito.when(commentRepository.save(comment)).thenReturn(comment);
-        Mockito.when(commentMapper.toDto(comment)).thenReturn(commentDto);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(commentMapper.toEntity(dto)).thenReturn(comment);
+        when(commentRepository.save(comment)).thenReturn(comment);
+        when(commentMapper.toDto(comment)).thenReturn(commentDto);
 
         CommentDto addedComment = commentService.addComment(dto);
 
         assertThat(addedComment).isNotNull();
         assertThat(addedComment.getContent()).isEqualTo("This is a new comment.");
 
-        Mockito.verify(taskRepository, Mockito.times(1)).findById(1L);
-        Mockito.verify(userRepository, Mockito.times(1)).findById(1L);
-        Mockito.verify(commentRepository, Mockito.times(1)).save(comment);
+        verify(taskRepository, times(1)).findById(1L);
+        verify(userRepository, times(1)).findById(1L);
+        verify(commentRepository, times(1)).save(comment);
     }
 
     @Test
@@ -87,16 +90,12 @@ public class CommentServiceTest {
         dto.setTaskId(999L);
         dto.setUserId(1L);
         dto.setContent("This is a new comment.");
+        when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> commentService.addComment(dto))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Task not found");
 
-        Mockito.when(taskRepository.findById(999L)).thenReturn(Optional.empty());
-
-        try {
-            commentService.addComment(dto);
-        } catch (Exception e) {
-            assertThat(e).isInstanceOf(EntityNotFoundException.class);
-        }
-
-        Mockito.verify(taskRepository, Mockito.times(1)).findById(999L);
+        verify(taskRepository, times(1)).findById(999L);
     }
 
     @Sql(scripts = "classpath:database/comment/add-test-comment.sql",
@@ -105,8 +104,7 @@ public class CommentServiceTest {
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @Test
     void shouldGetCommentsForTask() {
-        Task task = new Task();
-        task.setId(1L);
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Test Task");
 
         Comment comment1 = new Comment();
         comment1.setContent("First comment");
@@ -122,7 +120,7 @@ public class CommentServiceTest {
         Page<Comment> commentPage = new PageImpl<>(commentList);
 
         Pageable pageable = PageRequest.of(0, 10);
-        Mockito.when(commentRepository.findByTaskId(1L, pageable)).thenReturn(commentPage);
+        when(commentRepository.findByTaskId(1L, pageable)).thenReturn(commentPage);
 
         CommentDto commentDto1 = new CommentDto();
         commentDto1.setContent("First comment");
@@ -132,8 +130,8 @@ public class CommentServiceTest {
         commentDto2.setContent("Second comment");
         commentDto2.setText("second text");
 
-        Mockito.when(commentMapper.toDto(comment1)).thenReturn(commentDto1);
-        Mockito.when(commentMapper.toDto(comment2)).thenReturn(commentDto2);
+        when(commentMapper.toDto(comment1)).thenReturn(commentDto1);
+        when(commentMapper.toDto(comment2)).thenReturn(commentDto2);
 
         Page<CommentDto> commentDtoPage = commentService.getCommentsForTask(1L, pageable);
 

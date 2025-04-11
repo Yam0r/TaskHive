@@ -119,8 +119,8 @@ public class LabelControllerTest {
                 .andExpect(jsonPath("$.name").value("UpdatedLabel"))
                 .andExpect(jsonPath("$.color").value("yellow"));
 
-        verify(labelService, times(1)).updateLabel(eq(1L),
-                any(UpdateLabelRequestDto.class));
+        verify(labelService, times(1))
+                .updateLabel(eq(1L), any(UpdateLabelRequestDto.class));
     }
 
     @WithMockUser(username = "Admin", roles = "USER")

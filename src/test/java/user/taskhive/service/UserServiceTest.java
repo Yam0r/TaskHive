@@ -8,7 +8,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.HashSet;
 import java.util.Optional;
 import my.app.files.dto.user.UpdateProfileRequestDto;
 import my.app.files.dto.user.UpdateUserRoleRequestDto;
@@ -25,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.jdbc.Sql;
+import user.taskhive.config.TestDataUtil;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -41,26 +41,20 @@ class UserServiceTest {
     @InjectMocks
     private UserServiceImpl userService;
 
-    @Test
     @Sql(scripts = "classpath:database/user/add-test-user.sql",
             executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     @Sql(scripts = "classpath:database/user/clear-db-for-user.sql",
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+    @Test
     void testUpdateUserRole_ShouldUpdateRole() {
-        User user = new User();
-        user.setId(1L);
-        user.setEmail("testuser@example.com");
-        user.setRoles(new HashSet<>());
-
-        Role newRole = new Role();
-        newRole.setId(2L);
-        newRole.setRole(Role.RoleName.ADMIN);
+        User user = TestDataUtil.createTestUser(1L, "testuser@example.com", "John", "Doe");
+        Role newRole = TestDataUtil.createTestRole(2L, Role.RoleName.ADMIN);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(roleRepository.findByRole(Role.RoleName.ADMIN)).thenReturn(Optional.of(newRole));
 
-        UpdateUserRoleRequestDto requestDto = new UpdateUserRoleRequestDto();
-        requestDto.setNewRole(Role.RoleName.ADMIN);
+        UpdateUserRoleRequestDto requestDto = TestDataUtil
+                .createTestUpdateUserRoleRequestDto(Role.RoleName.ADMIN);
 
         userService.updateUserRole(1L, requestDto);
 
@@ -72,15 +66,10 @@ class UserServiceTest {
 
     @Test
     void testUpdateProfileInfo_ShouldUpdateUserProfile() {
-        User user = new User();
-        user.setId(1L);
-        user.setFirstName("John");
-        user.setLastName("Doe");
+        User user = TestDataUtil.createTestUser(1L, "testuser@example.com", "John", "Doe");
 
-        UpdateProfileRequestDto requestDto = new UpdateProfileRequestDto();
-        requestDto.setId(1L);
-        requestDto.setFirstName("UpdatedName");
-        requestDto.setLastName("UpdatedLastName");
+        UpdateProfileRequestDto requestDto = TestDataUtil
+                .createTestUpdateProfileRequestDto(1L, "UpdatedName", "UpdatedLastName");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -93,11 +82,7 @@ class UserServiceTest {
 
     @Test
     void testGetMyProfileInfo_ShouldReturnUserResponseDto() {
-        User user = new User();
-        user.setId(1L);
-        user.setEmail("testuser@example.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
+        User user = TestDataUtil.createTestUser(1L, "testuser@example.com", "John", "Doe");
 
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(userMapper.toUserResponse(user)).thenReturn(new UserResponseDto());

@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
+import user.taskhive.config.TestDataUtil;
 
 @SpringBootTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -33,9 +34,7 @@ public class LabelRepositoryTest {
         if (existingLabel.isPresent()) {
             label = existingLabel.get();
         } else {
-            label = new Label();
-            label.setName("Important");
-            label.setColor("white");
+            label = TestDataUtil.createTestLabel("Important", "white");
             labelRepository.save(label);
         }
 

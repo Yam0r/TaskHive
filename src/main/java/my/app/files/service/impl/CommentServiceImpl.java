@@ -15,6 +15,7 @@ import my.app.files.service.CommentService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -25,6 +26,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
 
     @Override
+    @Transactional
     public CommentDto addComment(CreateCommentRequestDto dto) {
         Task task = taskRepository.findById(dto.getTaskId())
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
