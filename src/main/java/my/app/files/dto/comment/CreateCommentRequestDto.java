@@ -2,6 +2,7 @@ package my.app.files.dto.comment;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,6 +16,7 @@ public class CreateCommentRequestDto {
     private Long userId;
 
     @NotBlank(message = "Text must not be empty")
+    @Size(max = 500, message = "Comment text must be at most 500 characters")
     private String text;
 
     private String content;

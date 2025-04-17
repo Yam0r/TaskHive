@@ -8,6 +8,7 @@ import my.app.files.service.AttachmentService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +25,7 @@ public class AttachmentController {
 
     @Operation(summary = "Upload an attachment",
             description = "Uploads an attachment for a specific task")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<AttachmentDto> uploadAttachment(
             @RequestParam("taskId") Long taskId,
@@ -33,6 +35,7 @@ public class AttachmentController {
 
     @Operation(summary = "Get all attachments for a task",
             description = "Retrieves all attachments associated with a specific task")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<Page<AttachmentDto>> getAttachmentsForTask(
             @RequestParam("taskId") Long taskId,

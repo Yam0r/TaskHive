@@ -14,29 +14,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({
-            LabelAlreadyExistsException.class,
-            UserAlreadyExistsException.class
+            UserAlreadyExistsException.class,
+            RegistrationException.class
     })
     public ResponseEntity<Object> handleAlreadyExists(RuntimeException ex) {
         return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler({
-            RegistrationException.class
+            EntityNotFoundException.class
     })
-    public ResponseEntity<Object> handleRegistration(RegistrationException ex) {
-        return new ResponseEntity<>(Map.of("error", ex.getMessage(), "code",
-                ex.getErrorCode()), HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler({
-            LabelNotFoundException.class,
-            ProjectNotFoundException.class,
-            TaskNotFoundException.class,
-            UserNotFoundException.class,
-            RoleNotFoundException.class
-    })
-    public ResponseEntity<Object> handleNotFound(RuntimeException ex) {
+    public ResponseEntity<Object> handleEntityNotFound(EntityNotFoundException ex) {
         return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 
@@ -59,6 +47,16 @@ public class GlobalExceptionHandler {
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .collect(Collectors.toList());
         return new ResponseEntity<>(Map.of("errors", errors), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(LabelAlreadyExistsException.class)
+    public ResponseEntity<Object> handleLabelAlreadyExists(LabelAlreadyExistsException ex) {
+        return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(LabelNotFoundException.class)
+    public ResponseEntity<Object> handleLabelNotFound(LabelNotFoundException ex) {
+        return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 
 }

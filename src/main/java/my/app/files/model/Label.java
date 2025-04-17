@@ -31,7 +31,7 @@ public class Label {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false, length = 7)
+    @Column(nullable = false, length = 24)
     private String color;
 
     @ManyToMany(mappedBy = "labels")

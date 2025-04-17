@@ -8,13 +8,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
-import my.app.files.exception.TaskNotFoundException;
 import my.app.files.mapper.TaskMapper;
 import my.app.files.model.Label;
 import my.app.files.model.Project;
@@ -85,7 +85,7 @@ class TaskServiceTest {
     void testRetrieveTaskDetails_ShouldThrowException() {
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(TaskNotFoundException.class, () -> tasksService.retrieveTaskDetails(99L));
+        assertThrows(EntityNotFoundException.class, () -> tasksService.retrieveTaskDetails(99L));
     }
 
     @Test
@@ -165,6 +165,6 @@ class TaskServiceTest {
     void testDeleteTask_ShouldThrowException() {
         when(taskRepository.existsById(99L)).thenReturn(false);
 
-        assertThrows(TaskNotFoundException.class, () -> tasksService.deleteTask(99L));
+        assertThrows(EntityNotFoundException.class, () -> tasksService.deleteTask(99L));
     }
 }

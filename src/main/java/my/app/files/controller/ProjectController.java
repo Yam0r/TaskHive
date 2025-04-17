@@ -13,6 +13,7 @@ import my.app.files.service.ProjectService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +34,7 @@ public class ProjectController {
 
     @Operation(summary = "Create a new project",
             description = "Creates a new project for the user.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<ProjectDto> createANewProject(
             @RequestBody @Valid CreateProjectRequestDto requestDto,
@@ -44,6 +46,7 @@ public class ProjectController {
     @Operation(summary = "Get user projects",
             description = "Retrieves a paginated list of projects belonging "
                     + "to the authenticated user.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<List<ProjectDto>> retrieveUsersProjects(
             Pageable pageable,
@@ -53,12 +56,15 @@ public class ProjectController {
 
     @Operation(summary = "Get project details",
             description = "Retrieves detailed information about a specific project.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ProjectDto> retrieveProjectDetails(@PathVariable Long id) {
         return ResponseEntity.ok(projectService.retrieveProjectDetails(id));
     }
 
-    @Operation(summary = "Update a project", description = "Updates an existing project by its ID.")
+    @Operation(summary = "Update a project",
+            description = "Updates an existing project by its ID.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<Void> updateProject(
             @PathVariable Long id,
@@ -68,6 +74,7 @@ public class ProjectController {
     }
 
     @Operation(summary = "Delete a project", description = "Deletes a project by its ID.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
