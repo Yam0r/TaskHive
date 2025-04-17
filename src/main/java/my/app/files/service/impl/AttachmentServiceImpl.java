@@ -10,7 +10,6 @@ import jakarta.transaction.Transactional;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import my.app.files.dto.attachment.AttachmentDto;
-import my.app.files.mapper.AttachmentMapper;
 import my.app.files.model.Attachment;
 import my.app.files.model.Task;
 import my.app.files.repository.AttachmentRepository;
@@ -22,15 +21,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@Transactional
 public class AttachmentServiceImpl implements AttachmentService {
     private final AttachmentRepository attachmentRepository;
     private final TaskRepository taskRepository;
     private final DbxClientV2 dropboxClient;
-    private final AttachmentMapper attachmentMapper;
 
     public AttachmentServiceImpl(AttachmentRepository attachmentRepository,
-                                 TaskRepository taskRepository,
-                                 AttachmentMapper attachmentMapper) {
+                                 TaskRepository taskRepository) {
         Dotenv dotenv = Dotenv.load();
         String appName = dotenv.get("MY_APP_NAME");
         String accessToken = dotenv.get("MY_DROPBOX_ACCESS_TOKEN");
@@ -40,7 +38,6 @@ public class AttachmentServiceImpl implements AttachmentService {
 
         this.attachmentRepository = attachmentRepository;
         this.taskRepository = taskRepository;
-        this.attachmentMapper = attachmentMapper;
     }
 
     @Override
@@ -62,7 +59,13 @@ public class AttachmentServiceImpl implements AttachmentService {
 
             attachmentRepository.save(attachment);
 
-            return attachmentMapper.toDto(attachment);
+            AttachmentDto attachmentDto = new AttachmentDto();
+            attachmentDto.setId(attachment.getId());
+            attachmentDto.setFilename(attachment.getFilename());
+            attachmentDto.setDropboxFileId(attachment.getDropboxFileId());
+            attachmentDto.setUploadDate(attachment.getUploadDate());
+
+            return attachmentDto;
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload file", e);
         }
@@ -71,6 +74,14 @@ public class AttachmentServiceImpl implements AttachmentService {
     @Override
     public Page<AttachmentDto> getAttachmentsForTask(Long taskId, Pageable pageable) {
         Page<Attachment> attachments = attachmentRepository.findByTaskId(taskId, pageable);
-        return attachments.map(attachmentMapper::toDto);
+
+        return attachments.map(attachment -> {
+            AttachmentDto attachmentDto = new AttachmentDto();
+            attachmentDto.setId(attachment.getId());
+            attachmentDto.setFilename(attachment.getFilename());
+            attachmentDto.setDropboxFileId(attachment.getDropboxFileId());
+            attachmentDto.setUploadDate(attachment.getUploadDate());
+            return attachmentDto;
+        });
     }
 }

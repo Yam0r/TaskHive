@@ -1,15 +1,13 @@
 package my.app.files.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
-import my.app.files.exception.LabelNotFoundException;
-import my.app.files.exception.ProjectNotFoundException;
-import my.app.files.exception.TaskNotFoundException;
-import my.app.files.exception.UserNotFoundException;
 import my.app.files.mapper.TaskMapper;
 import my.app.files.model.Label;
 import my.app.files.model.Project;
@@ -26,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class TasksServiceImpl implements TasksService {
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
@@ -33,40 +32,20 @@ public class TasksServiceImpl implements TasksService {
     private final ProjectRepository projectRepository;
     private final LabelRepository labelRepository;
 
-    private User getUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-    }
-
-    private Project getProjectById(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
-    }
-
-    private Label getLabelById(Long labelId) {
-        return labelRepository.findById(labelId)
-                .orElseThrow(() -> new LabelNotFoundException("Label not found"));
-    }
-
     @Override
     @Transactional
     public TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto) {
         Task task = taskMapper.toEntity(createTaskRequestDto);
 
-        if (createTaskRequestDto.getAssigneeId() != null) {
-            task.setAssignee(getUserById(createTaskRequestDto.getAssigneeId()));
-        }
+        Optional.ofNullable(createTaskRequestDto.getAssigneeId())
+                .map(this::getUserById)
+                .ifPresent(task::setAssignee);
 
-        if (createTaskRequestDto.getProjectId() != null) {
-            task.setProject(getProjectById(createTaskRequestDto.getProjectId()));
-        } else {
-            throw new IllegalArgumentException("Project ID is required");
-        }
+        task.setProject(getProjectById(createTaskRequestDto.getProjectId())); // вже вимагається
 
-        if (createTaskRequestDto.getLabelIds() != null) {
-            List<Label> labels = labelRepository.findAllById(createTaskRequestDto.getLabelIds());
-            task.setLabels(new HashSet<>(labels));
-        }
+        Optional.ofNullable(createTaskRequestDto.getLabelIds())
+                .map(labelRepository::findAllById)
+                .ifPresent(labels -> task.setLabels(new HashSet<>(labels)));
 
         return taskMapper.toDto(taskRepository.save(task));
     }
@@ -82,7 +61,7 @@ public class TasksServiceImpl implements TasksService {
     @Transactional
     public TaskDto retrieveTaskDetails(Long id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
         return taskMapper.toDto(task);
     }
 
@@ -90,12 +69,12 @@ public class TasksServiceImpl implements TasksService {
     @Transactional
     public void updateTask(Long id, UpdateTaskRequestDto updateTaskRequestDto) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
         taskMapper.updateTaskFromDto(updateTaskRequestDto, task);
 
-        if (updateTaskRequestDto.getAssigneeId() != null) {
-            task.setAssignee(getUserById(updateTaskRequestDto.getAssigneeId()));
-        }
+        Optional.ofNullable(updateTaskRequestDto.getAssigneeId())
+                .map(this::getUserById)
+                .ifPresent(task::setAssignee);
 
         taskRepository.save(task);
     }
@@ -104,7 +83,7 @@ public class TasksServiceImpl implements TasksService {
     @Transactional
     public void deleteTask(Long id) {
         if (!taskRepository.existsById(id)) {
-            throw new TaskNotFoundException("Task not found");
+            throw new EntityNotFoundException("Task not found");
         }
         taskRepository.deleteById(id);
     }
@@ -113,7 +92,7 @@ public class TasksServiceImpl implements TasksService {
     @Transactional
     public TaskDto assignLabelToTask(Long taskId, Long labelId) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
         Label label = getLabelById(labelId);
 
         task.getLabels().add(label);
@@ -126,12 +105,27 @@ public class TasksServiceImpl implements TasksService {
     @Transactional
     public TaskDto removeLabelFromTask(Long taskId, Long labelId) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
         Label label = getLabelById(labelId);
 
         task.getLabels().remove(label);
         taskRepository.save(task);
 
         return taskMapper.toDto(task);
+    }
+
+    private User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
+
+    private Project getProjectById(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+    }
+
+    private Label getLabelById(Long labelId) {
+        return labelRepository.findById(labelId)
+                .orElseThrow(() -> new EntityNotFoundException("Label not found"));
     }
 }

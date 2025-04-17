@@ -1,7 +1,5 @@
--- Очистка таблицы перед вставкой, чтобы избежать дубликатов
 DELETE FROM labels WHERE name = 'Important';
 
--- Вставка данных
 INSERT INTO labels (name, color) VALUES ('Important', 'white');
 
 INSERT INTO users (id, username, password, email, is_deleted)

@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final TaskRepository taskRepository;
@@ -34,11 +35,11 @@ public class CommentServiceImpl implements CommentService {
         User author = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        Comment comment = commentMapper.toEntity(dto);
+        Comment comment = new Comment();
         comment.setTask(task);
         comment.setAuthor(author);
-
         comment.setContent(dto.getContent() != null ? dto.getContent() : "");
+        comment.setText(dto.getText());
 
         Comment savedComment = commentRepository.save(comment);
         return commentMapper.toDto(savedComment);

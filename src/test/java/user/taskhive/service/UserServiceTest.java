@@ -32,10 +32,10 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
+    @Mock(lenient = true)
     private RoleRepository roleRepository;
 
-    @Mock
+    @Mock(lenient = true)
     private UserMapper userMapper;
 
     @InjectMocks

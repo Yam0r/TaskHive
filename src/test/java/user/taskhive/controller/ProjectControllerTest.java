@@ -55,13 +55,13 @@ public class ProjectControllerTest {
         CreateProjectRequestDto requestDto = new CreateProjectRequestDto();
         requestDto.setName("New Project");
         requestDto.setDescription("A description");
-        requestDto.setStartDate(LocalDate.of(2025, 3, 21));
+        requestDto.setStartDate(LocalDate.of(2025, 4, 16));
         requestDto.setEndDate(LocalDate.of(2025, 6, 21));
 
         ProjectDto projectDto = new ProjectDto();
         projectDto.setName("New Project");
         projectDto.setDescription("A description");
-        projectDto.setStartDate(LocalDate.of(2025, 3, 21));
+        projectDto.setStartDate(LocalDate.of(2025, 4, 16));
         projectDto.setEndDate(LocalDate.of(2025, 6, 21));
 
         when(projectService.createANewProject(any(CreateProjectRequestDto.class), any()))
@@ -71,12 +71,12 @@ public class ProjectControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\": \"New Project\", "
                                 + "\"description\": \"A description\", "
-                                + "\"startDate\": \"2025-03-21\", "
+                                + "\"startDate\": \"2025-04-16\", "
                                 + "\"endDate\": \"2025-06-21\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("New Project"))
                 .andExpect(jsonPath("$.description").value("A description"))
-                .andExpect(jsonPath("$.startDate").value("2025-03-21"))
+                .andExpect(jsonPath("$.startDate").value("2025-04-16"))
                 .andExpect(jsonPath("$.endDate").value("2025-06-21"));
 
         verify(projectService, times(1))

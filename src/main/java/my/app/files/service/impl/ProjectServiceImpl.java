@@ -1,11 +1,11 @@
 package my.app.files.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.project.CreateProjectRequestDto;
 import my.app.files.dto.project.ProjectDto;
 import my.app.files.dto.project.UpdateProjectRequestDto;
-import my.app.files.exception.ProjectNotFoundException;
 import my.app.files.mapper.ProjectMapper;
 import my.app.files.model.Project;
 import my.app.files.model.User;
@@ -43,7 +43,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional(readOnly = true)
     public ProjectDto retrieveProjectDetails(Long id) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: "
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: "
                         + id));
         return projectMapper.toProjectDto(project);
     }
@@ -51,7 +51,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public void updateProject(Long id, UpdateProjectRequestDto requestDto) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: "
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: "
                         + id));
         projectMapper.updateProjectFromDto(requestDto, project);
         projectRepository.save(project);
@@ -60,7 +60,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public void deleteProject(Long id) {
         if (!projectRepository.existsById(id)) {
-            throw new ProjectNotFoundException("Project not found with id: " + id);
+            throw new EntityNotFoundException("Project not found with id: " + id);
         }
         projectRepository.deleteById(id);
     }

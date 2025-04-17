@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +28,7 @@ public class CommentController {
 
     @Operation(summary = "Add a comment",
             description = "Creates a new comment for a specific task.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<CommentDto> addComment(@RequestBody @Valid CreateCommentRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -35,6 +37,7 @@ public class CommentController {
 
     @Operation(summary = "Get comments for a task",
             description = "Retrieves all comments associated with a specific task.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<Page<CommentDto>> getComments(
             @RequestParam Long taskId,

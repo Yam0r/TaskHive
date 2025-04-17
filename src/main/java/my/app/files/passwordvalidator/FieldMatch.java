@@ -1,4 +1,4 @@
-package my.app.files.config;
+package my.app.files.passwordvalidator;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -10,13 +10,14 @@ import java.lang.annotation.Target;
 
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = PasswordMatchesValidator.class)
+@Constraint(validatedBy = FieldMatchValidator.class)
 @Documented
-public @interface PasswordMatches {
-    String message() default "Passwords do not match";
+public @interface FieldMatch {
+    String message() default "Fields do not match";
+
+    String first();
+    String second();
 
     Class<?>[] groups() default {};
-
     Class<? extends Payload>[] payload() default {};
 }
-

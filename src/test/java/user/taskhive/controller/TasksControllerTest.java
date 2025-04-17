@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
@@ -54,17 +55,19 @@ class TasksControllerTest {
         requestDto.setName("New Task");
         requestDto.setProjectId(2L);
 
-        TaskDto responseDto = new TaskDto();
-        responseDto.setId(2L);
-        responseDto.setName("New Task");
+        requestDto.setName("New Task");
+        requestDto.setProjectId(2L);
+        requestDto.setDueDate(LocalDate.now().plusDays(5));
+        requestDto.setAssigneeId(1L);
 
+        TaskDto responseDto = new TaskDto();
         when(tasksService.createANewTask(any(CreateTaskRequestDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(2))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(3))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("New Task"));
     }
 

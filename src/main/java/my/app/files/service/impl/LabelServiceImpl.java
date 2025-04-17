@@ -17,12 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class LabelServiceImpl implements LabelService {
     private final LabelRepository labelRepository;
     private final LabelMapper labelMapper;
 
     @Override
-    @Transactional
     public LabelDto createLabel(CreateLabelRequestDto dto) {
         labelRepository.findByName(dto.getName())
                 .ifPresent(label -> {
@@ -30,7 +30,8 @@ public class LabelServiceImpl implements LabelService {
                 });
 
         Label label = labelMapper.toEntity(dto);
-        return labelMapper.toDto(labelRepository.save(label));
+        Label savedLabel = labelRepository.save(label);
+        return labelMapper.toDto(savedLabel);
     }
 
     @Override
@@ -41,16 +42,16 @@ public class LabelServiceImpl implements LabelService {
     }
 
     @Override
-    @Transactional
     public LabelDto updateLabel(Long id, UpdateLabelRequestDto dto) {
         Label label = labelRepository.findById(id)
                 .orElseThrow(() -> new LabelNotFoundException("Label not found"));
+
         labelMapper.updateEntity(label, dto);
-        return labelMapper.toDto(labelRepository.save(label));
+        Label updatedLabel = labelRepository.save(label);
+        return labelMapper.toDto(updatedLabel);
     }
 
     @Override
-    @Transactional
     public void deleteLabel(Long id) {
         if (!labelRepository.existsById(id)) {
             throw new LabelNotFoundException("Label not found");
