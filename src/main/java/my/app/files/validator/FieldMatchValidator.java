@@ -1,4 +1,4 @@
-package my.app.files.passwordvalidator;
+package my.app.files.validator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

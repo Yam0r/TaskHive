@@ -41,7 +41,7 @@ public class TasksServiceImpl implements TasksService {
                 .map(this::getUserById)
                 .ifPresent(task::setAssignee);
 
-        task.setProject(getProjectById(createTaskRequestDto.getProjectId())); // вже вимагається
+        task.setProject(getProjectById(createTaskRequestDto.getProjectId()));
 
         Optional.ofNullable(createTaskRequestDto.getLabelIds())
                 .map(labelRepository::findAllById)

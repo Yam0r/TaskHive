@@ -53,10 +53,4 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleLabelAlreadyExists(LabelAlreadyExistsException ex) {
         return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.CONFLICT);
     }
-
-    @ExceptionHandler(LabelNotFoundException.class)
-    public ResponseEntity<Object> handleLabelNotFound(LabelNotFoundException ex) {
-        return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.NOT_FOUND);
-    }
-
 }
