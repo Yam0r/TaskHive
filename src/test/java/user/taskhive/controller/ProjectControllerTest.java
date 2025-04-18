@@ -52,16 +52,18 @@ public class ProjectControllerTest {
     @WithMockUser(username = "TestUser", roles = "USER")
     @Test
     void testCreateANewProject() throws Exception {
+        LocalDate today = LocalDate.now();
+
         CreateProjectRequestDto requestDto = new CreateProjectRequestDto();
         requestDto.setName("New Project");
         requestDto.setDescription("A description");
-        requestDto.setStartDate(LocalDate.of(2025, 4, 16));
+        requestDto.setStartDate(today);
         requestDto.setEndDate(LocalDate.of(2025, 6, 21));
 
         ProjectDto projectDto = new ProjectDto();
         projectDto.setName("New Project");
         projectDto.setDescription("A description");
-        projectDto.setStartDate(LocalDate.of(2025, 4, 16));
+        projectDto.setStartDate(today);
         projectDto.setEndDate(LocalDate.of(2025, 6, 21));
 
         when(projectService.createANewProject(any(CreateProjectRequestDto.class), any()))
@@ -71,12 +73,12 @@ public class ProjectControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\": \"New Project\", "
                                 + "\"description\": \"A description\", "
-                                + "\"startDate\": \"2025-04-16\", "
+                                + "\"startDate\": \"" + today + "\", "
                                 + "\"endDate\": \"2025-06-21\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("New Project"))
                 .andExpect(jsonPath("$.description").value("A description"))
-                .andExpect(jsonPath("$.startDate").value("2025-04-16"))
+                .andExpect(jsonPath("$.startDate").value(today.toString()))
                 .andExpect(jsonPath("$.endDate").value("2025-06-21"));
 
         verify(projectService, times(1))

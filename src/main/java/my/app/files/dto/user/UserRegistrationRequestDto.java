@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import my.app.files.passwordvalidator.FieldMatch;
+import my.app.files.validator.FieldMatch;
 
 @FieldMatch(first = "password", second = "repeatPassword", message = "Passwords do not match")
 @Getter

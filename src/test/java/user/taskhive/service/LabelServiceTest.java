@@ -13,8 +13,8 @@ import java.util.Optional;
 import my.app.files.dto.labels.CreateLabelRequestDto;
 import my.app.files.dto.labels.LabelDto;
 import my.app.files.dto.labels.UpdateLabelRequestDto;
+import my.app.files.exception.EntityNotFoundException;
 import my.app.files.exception.LabelAlreadyExistsException;
-import my.app.files.exception.LabelNotFoundException;
 import my.app.files.mapper.LabelMapper;
 import my.app.files.model.Label;
 import my.app.files.repository.LabelRepository;
@@ -124,11 +124,11 @@ class LabelServiceTest {
 
         when(labelRepository.findById(labelId)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(LabelNotFoundException.class, () -> {
+        Exception exception = assertThrows(EntityNotFoundException.class, () -> {
             labelService.updateLabel(labelId, updateDto);
         });
 
-        assertThat(exception.getMessage()).isEqualTo("Label not found");
+        assertThat(exception.getMessage()).isEqualTo("Label not found by id: 1");
         verify(labelRepository).findById(labelId);
         verify(labelRepository, never()).save(any());
     }
@@ -148,11 +148,11 @@ class LabelServiceTest {
         Long labelId = 1L;
         when(labelRepository.existsById(labelId)).thenReturn(false);
 
-        Exception exception = assertThrows(LabelNotFoundException.class, () -> {
+        Exception exception = assertThrows(EntityNotFoundException.class, () -> {
             labelService.deleteLabel(labelId);
         });
 
-        assertThat(exception.getMessage()).isEqualTo("Label not found");
+        assertThat(exception.getMessage()).isEqualTo("Label not found by id: 1");
         verify(labelRepository).existsById(labelId);
         verify(labelRepository, never()).deleteById(any());
     }
