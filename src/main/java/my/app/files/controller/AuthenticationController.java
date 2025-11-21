@@ -34,7 +34,7 @@ public class AuthenticationController {
     }
 
     @Operation(summary = "User Registration", description = "Register a new user in the system")
-    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    //@PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PostMapping("/registration")
     public UserResponseDto registerUser(@RequestBody @Valid UserRegistrationRequestDto requestDto)
             throws RegistrationException {

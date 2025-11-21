@@ -44,6 +44,7 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setEmail(requestDto.getEmail());
         user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
+        user.setUsername(requestDto.getUsername());
 
         String roleName = Role.RoleName.USER.name();
         Role userRole = roleRepository.findByRole(Role.RoleName.USER)
