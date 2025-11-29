@@ -26,7 +26,6 @@ public class AuthenticationController {
     private final UserService userService;
 
     @Operation(summary = "User login", description = "Login a user in the system")
-    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PostMapping("/login")
     public UserLoginResponseDto login(@RequestBody @Valid UserLoginRequestDto requestDto)
             throws RegistrationException {
@@ -34,7 +33,6 @@ public class AuthenticationController {
     }
 
     @Operation(summary = "User Registration", description = "Register a new user in the system")
-    //@PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PostMapping("/registration")
     public UserResponseDto registerUser(@RequestBody @Valid UserRegistrationRequestDto requestDto)
             throws RegistrationException {
