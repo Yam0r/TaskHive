@@ -11,7 +11,6 @@ import my.app.files.dto.user.UserResponseDto;
 import my.app.files.exception.RegistrationException;
 import my.app.files.security.AuthenticationService;
 import my.app.files.service.UserService;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
