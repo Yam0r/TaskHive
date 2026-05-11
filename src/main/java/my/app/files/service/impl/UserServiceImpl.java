@@ -1,46 +1,50 @@
 package my.app.files.service.impl;
 
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import my.app.files.dto.user.UpdateProfileRequestDto;
 import my.app.files.dto.user.UpdateUserRoleRequestDto;
 import my.app.files.dto.user.UserRegistrationRequestDto;
 import my.app.files.dto.user.UserResponseDto;
+import my.app.files.exception.EntityNotFoundException;
 import my.app.files.exception.RegistrationException;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import my.app.files.mapper.UserMapper;
+import my.app.files.exception.UserAlreadyExistsException;
+import my.app.files.model.Role;
 import my.app.files.model.User;
+import my.app.files.repository.RoleRepository;
+import my.app.files.repository.UserRepository;
+import my.app.files.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import my.app.files.repository.UserRepository;
-import my.app.files.model.Role;
-import my.app.files.rolerepository.RoleRepository;
-import my.app.files.service.UserService;
-
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class UserServiceImpl implements UserService {
-    private static final String NOT_REGISTRATION_EMAIL_MESSAGE = "Can't register user: " +
-            "email already exists";
+
+    private static final String NOT_REGISTRATION_EMAIL_MESSAGE = "Can't register user: "
+            + "email already exists";
     private static final String NOT_FOUND_ROLE = "Role %s not found in the database:";
+
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
 
     @Transactional
     public UserResponseDto register(UserRegistrationRequestDto requestDto)
-            throws RegistrationException {
+            throws UserAlreadyExistsException, RegistrationException {
+
         if (userRepository.existsByEmail(requestDto.getEmail())) {
-            throw new RegistrationException(NOT_REGISTRATION_EMAIL_MESSAGE);
+            throw new UserAlreadyExistsException(NOT_REGISTRATION_EMAIL_MESSAGE);
         }
 
-        User user = userMapper.toUser(requestDto);
+        User user = new User();
+        user.setEmail(requestDto.getEmail());
         user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
+        user.setUsername(requestDto.getUsername());
 
         String roleName = Role.RoleName.USER.name();
         Role userRole = roleRepository.findByRole(Role.RoleName.USER)
@@ -50,7 +54,10 @@ public class UserServiceImpl implements UserService {
         user.setRoles(Set.of(userRole));
         userRepository.save(user);
 
-        return userMapper.toUserResponse(user);
+        UserResponseDto responseDto = new UserResponseDto();
+        responseDto.setId(user.getId());
+        responseDto.setEmail(user.getEmail());
+        return responseDto;
     }
 
     @Transactional
@@ -67,26 +74,26 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-
     @Override
     public UserResponseDto getMyProfileInfo(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        return userMapper.toUserResponse(user);
+
+        UserResponseDto responseDto = new UserResponseDto();
+        responseDto.setId(user.getId());
+        responseDto.setEmail(user.getEmail());
+        return responseDto;
     }
 
     @Transactional
-    public void updateProfileInfo(Long userId, UpdateProfileRequestDto requestDto) {
+    public void updateProfileInfo(Long userId, UpdateProfileRequestDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: "
                         + userId));
 
-        if (requestDto.getFirstName() != null) {
-            user.setFirstName(requestDto.getFirstName());
-        }
-        if (requestDto.getLastName() != null) {
-            user.setLastName(requestDto.getLastName());
-        }
+        Optional.ofNullable(dto.getFirstName()).ifPresent(user::setFirstName);
+        Optional.ofNullable(dto.getLastName()).ifPresent(user::setLastName);
+
         userRepository.save(user);
     }
 
@@ -94,5 +101,4 @@ public class UserServiceImpl implements UserService {
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
-
 }

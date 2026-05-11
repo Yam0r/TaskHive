@@ -1,6 +1,9 @@
 package my.app.files.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
@@ -17,12 +20,11 @@ import my.app.files.repository.UserRepository;
 import my.app.files.service.TasksService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.HashSet;
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class TasksServiceImpl implements TasksService {
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
@@ -31,27 +33,19 @@ public class TasksServiceImpl implements TasksService {
     private final LabelRepository labelRepository;
 
     @Override
+    @Transactional
     public TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto) {
         Task task = taskMapper.toEntity(createTaskRequestDto);
 
-        if (createTaskRequestDto.getAssigneeId() != null) {
-            User assignee = userRepository.findById(createTaskRequestDto.getAssigneeId())
-                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
-            task.setAssignee(assignee);
-        }
+        Optional.ofNullable(createTaskRequestDto.getAssigneeId())
+                .map(this::getUserById)
+                .ifPresent(task::setAssignee);
 
-        if (createTaskRequestDto.getProjectId() != null) {
-            Project project = projectRepository.findById(createTaskRequestDto.getProjectId())
-                    .orElseThrow(() -> new EntityNotFoundException("Project not found"));
-            task.setProject(project);
-        } else {
-            throw new IllegalArgumentException("Project ID is required");
-        }
+        task.setProject(getProjectById(createTaskRequestDto.getProjectId()));
 
-        if (createTaskRequestDto.getLabelIds() != null) {
-            List<Label> labels = labelRepository.findAllById(createTaskRequestDto.getLabelIds());
-            task.setLabels(new HashSet<>(labels));
-        }
+        Optional.ofNullable(createTaskRequestDto.getLabelIds())
+                .map(labelRepository::findAllById)
+                .ifPresent(labels -> task.setLabels(new HashSet<>(labels)));
 
         return taskMapper.toDto(taskRepository.save(task));
     }
@@ -64,6 +58,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public TaskDto retrieveTaskDetails(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
@@ -71,21 +66,21 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public void updateTask(Long id, UpdateTaskRequestDto updateTaskRequestDto) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
         taskMapper.updateTaskFromDto(updateTaskRequestDto, task);
 
-        if (updateTaskRequestDto.getAssigneeId() != null) {
-            User assignee = userRepository.findById(updateTaskRequestDto.getAssigneeId())
-                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
-            task.setAssignee(assignee);
-        }
+        Optional.ofNullable(updateTaskRequestDto.getAssigneeId())
+                .map(this::getUserById)
+                .ifPresent(task::setAssignee);
 
         taskRepository.save(task);
     }
 
     @Override
+    @Transactional
     public void deleteTask(Long id) {
         if (!taskRepository.existsById(id)) {
             throw new EntityNotFoundException("Task not found");
@@ -94,11 +89,11 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public TaskDto assignLabelToTask(Long taskId, Long labelId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
-        Label label = labelRepository.findById(labelId)
-                .orElseThrow(() -> new EntityNotFoundException("Label not found"));
+        Label label = getLabelById(labelId);
 
         task.getLabels().add(label);
         taskRepository.save(task);
@@ -107,15 +102,30 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
+    @Transactional
     public TaskDto removeLabelFromTask(Long taskId, Long labelId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
-        Label label = labelRepository.findById(labelId)
-                .orElseThrow(() -> new EntityNotFoundException("Label not found"));
+        Label label = getLabelById(labelId);
 
         task.getLabels().remove(label);
         taskRepository.save(task);
 
         return taskMapper.toDto(task);
+    }
+
+    private User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
+
+    private Project getProjectById(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+    }
+
+    private Label getLabelById(Long labelId) {
+        return labelRepository.findById(labelId)
+                .orElseThrow(() -> new EntityNotFoundException("Label not found"));
     }
 }

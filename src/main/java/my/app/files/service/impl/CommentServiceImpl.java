@@ -12,12 +12,14 @@ import my.app.files.repository.CommentRepository;
 import my.app.files.repository.TaskRepository;
 import my.app.files.repository.UserRepository;
 import my.app.files.service.CommentService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final TaskRepository taskRepository;
@@ -25,6 +27,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
 
     @Override
+    @Transactional
     public CommentDto addComment(CreateCommentRequestDto dto) {
         Task task = taskRepository.findById(dto.getTaskId())
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
@@ -32,21 +35,19 @@ public class CommentServiceImpl implements CommentService {
         User author = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        Comment comment = commentMapper.toEntity(dto);
+        Comment comment = new Comment();
         comment.setTask(task);
         comment.setAuthor(author);
-
         comment.setContent(dto.getContent() != null ? dto.getContent() : "");
+        comment.setText(dto.getText());
 
         Comment savedComment = commentRepository.save(comment);
         return commentMapper.toDto(savedComment);
     }
 
     @Override
-    public List<CommentDto> getCommentsForTask(Long taskId){
-        List<Comment> comments = commentRepository.findByTaskId(taskId);
-        return comments.stream()
-                .map(commentMapper::toDto)
-                .toList();
+    public Page<CommentDto> getCommentsForTask(Long taskId, Pageable pageable) {
+        return commentRepository.findByTaskId(taskId, pageable)
+                .map(commentMapper::toDto);
     }
 }

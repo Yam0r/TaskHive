@@ -2,11 +2,11 @@ package my.app.files.service;
 
 import my.app.files.dto.comment.CommentDto;
 import my.app.files.dto.comment.CreateCommentRequestDto;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CommentService {
     CommentDto addComment(CreateCommentRequestDto dto);
 
-    List<CommentDto> getCommentsForTask(Long taskId);
+    Page<CommentDto> getCommentsForTask(Long taskId, Pageable pageable);
 }

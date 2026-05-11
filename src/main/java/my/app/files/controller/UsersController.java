@@ -1,5 +1,7 @@
 package my.app.files.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,19 +22,24 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Users", description = "Manages user profiles and roles.")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
 public class UsersController {
     private final UserService userService;
 
+    @Operation(summary = "Update user role",
+            description = "Allows an admin to update a user's role.")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PutMapping("{id}/role")
-    public void UpdateUserRole(@PathVariable Long id,
+    public void updateUserRole(@PathVariable Long id,
                                @RequestBody @Valid UpdateUserRoleRequestDto requestDto) {
         userService.updateUserRole(id, requestDto);
     }
 
+    @Operation(summary = "Get current user profile",
+            description = "Retrieves the profile information of the currently authenticated user.")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping("/me")
     public ResponseEntity<UserResponseDto> getMyProfileInfo(@AuthenticationPrincipal UserDetails
@@ -40,6 +47,8 @@ public class UsersController {
         return ResponseEntity.ok(userService.getMyProfileInfo(userDetails.getUsername()));
     }
 
+    @Operation(summary = "Update profile",
+            description = "Allows a user to update their own profile information.")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PutMapping("/me")
     public void updateProfileInfo(@RequestBody @Valid UpdateProfileRequestDto requestDto,
@@ -50,7 +59,6 @@ public class UsersController {
         if (!user.getId().equals(requestDto.getId())) {
             throw new AccessDeniedException("You can only edit your own profile");
         }
-
         userService.updateProfileInfo(user.getId(), requestDto);
     }
 }

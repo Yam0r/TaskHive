@@ -9,16 +9,15 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @SQLDelete(sql = "UPDATE users SET is_deleted = TRUE WHERE id = ?")
@@ -71,21 +70,21 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return !isDeleted;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !isDeleted;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        return !isDeleted;
     }
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return !isDeleted;
     }
 }

@@ -1,8 +1,8 @@
 package my.app.files.mapper;
 
 import my.app.files.config.MapperConfig;
-import my.app.files.dto.project.ProjectDto;
 import my.app.files.dto.project.CreateProjectRequestDto;
+import my.app.files.dto.project.ProjectDto;
 import my.app.files.dto.project.UpdateProjectRequestDto;
 import my.app.files.model.Project;
 import org.mapstruct.Mapper;
