@@ -7,12 +7,15 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
+import my.app.files.dto.task.TaskStatisticsDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
 import my.app.files.service.TasksService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,8 +47,8 @@ public class TasksController {
             description = "Retrieves a paginated list of tasks for a specific project.")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping
-    public ResponseEntity<List<TaskDto>> retrieveTasksForAProject(Pageable pageable) {
-        return ResponseEntity.ok(tasksService.retrieveTasksForAProject(pageable));
+    public ResponseEntity<List<TaskDto>> retrieveTasksForAProject(Pageable pageable, Long projectId) {
+        return ResponseEntity.ok(tasksService.retrieveTasksForAProject(pageable, projectId));
     }
 
     @Operation(summary = "Get task details",
@@ -54,6 +57,24 @@ public class TasksController {
     @GetMapping("/{id}")
     public ResponseEntity<TaskDto> retrieveTaskDetails(@PathVariable Long id) {
         return ResponseEntity.ok(tasksService.retrieveTaskDetails(id));
+    }
+
+    @Operation(summary = "Get my tasks",
+            description = "Retrieves tasks assigned to the current user.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @GetMapping("/my")
+    public ResponseEntity<List<TaskDto>> getMyTasks(
+            @AuthenticationPrincipal UserDetails userDetails, Pageable pageable) {
+        return ResponseEntity.ok(tasksService.getMyTasks(userDetails.getUsername(), pageable));
+    }
+
+    @Operation(summary = "Get my task statistics",
+            description = "Returns task counts by status for the current user.")
+    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @GetMapping("/my/statistics")
+    public ResponseEntity<TaskStatisticsDto> getMyStatistics(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(tasksService.getMyStatistics(userDetails.getUsername()));
     }
 
     @Operation(summary = "Update a task", description = "Updates an existing task by its ID.")

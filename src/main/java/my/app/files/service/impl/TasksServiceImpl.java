@@ -7,12 +7,10 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
+import my.app.files.dto.task.TaskStatisticsDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
 import my.app.files.mapper.TaskMapper;
-import my.app.files.model.Label;
-import my.app.files.model.Project;
-import my.app.files.model.Task;
-import my.app.files.model.User;
+import my.app.files.model.*;
 import my.app.files.repository.LabelRepository;
 import my.app.files.repository.ProjectRepository;
 import my.app.files.repository.TaskRepository;
@@ -37,6 +35,10 @@ public class TasksServiceImpl implements TasksService {
     public TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto) {
         Task task = taskMapper.toEntity(createTaskRequestDto);
 
+        if (task.getStatus() == null) {
+            task.setStatus(TaskStatus.NOT_STARTED);
+        }
+
         Optional.ofNullable(createTaskRequestDto.getAssigneeId())
                 .map(this::getUserById)
                 .ifPresent(task::setAssignee);
@@ -51,8 +53,18 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
-    public List<TaskDto> retrieveTasksForAProject(Pageable pageable) {
-        return taskRepository.findAll(pageable)
+    public List<TaskDto> retrieveTasksForAProject(Pageable pageable, Long projectId) {
+        return taskRepository.findAllByProjectId(projectId, pageable)
+                .map(taskMapper::toDto)
+                .getContent();
+    }
+
+    @Override
+    public List<TaskDto> getMyTasks(String userEmail, Pageable pageable){
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        return taskRepository.findByAssigneeId(user.getId(), pageable)
                 .map(taskMapper::toDto)
                 .getContent();
     }
@@ -86,6 +98,22 @@ public class TasksServiceImpl implements TasksService {
             throw new EntityNotFoundException("Task not found");
         }
         taskRepository.deleteById(id);
+    }
+
+    @Override
+    public TaskStatisticsDto getMyStatistics(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        List<Task> userTasks = taskRepository.findAllTasksByAssigneeId(user.getId());
+        TaskStatisticsDto stats = new TaskStatisticsDto();
+
+        stats.setTotalTasks((long) userTasks.size());
+
+        stats.setNotStartedTasks(countByStatus(userTasks, TaskStatus.NOT_STARTED));
+        stats.setInProgressTasks(countByStatus(userTasks, TaskStatus.IN_PROGRESS));
+        stats.setCompletedTasks(countByStatus(userTasks, TaskStatus.COMPLETED));
+        return stats;
     }
 
     @Override
@@ -127,5 +155,9 @@ public class TasksServiceImpl implements TasksService {
     private Label getLabelById(Long labelId) {
         return labelRepository.findById(labelId)
                 .orElseThrow(() -> new EntityNotFoundException("Label not found"));
+    }
+
+    private long countByStatus(List<Task> tasks, TaskStatus status) {
+        return tasks.stream().filter(t -> t.getStatus() == status).count();
     }
 }

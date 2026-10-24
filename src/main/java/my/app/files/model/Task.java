@@ -44,4 +44,6 @@ public class Task {
             inverseJoinColumns = @JoinColumn(name = "label_id")
     )
     private Set<Label> labels = new HashSet<>();
+
+    private TaskStatus status;
 }

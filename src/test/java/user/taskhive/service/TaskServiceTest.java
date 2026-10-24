@@ -15,10 +15,13 @@ import java.util.Optional;
 import java.util.Set;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
+import my.app.files.dto.task.TaskStatisticsDto;
 import my.app.files.mapper.TaskMapper;
 import my.app.files.model.Label;
 import my.app.files.model.Project;
 import my.app.files.model.Task;
+import my.app.files.model.TaskStatus;
+import my.app.files.model.User;
 import my.app.files.repository.LabelRepository;
 import my.app.files.repository.ProjectRepository;
 import my.app.files.repository.TaskRepository;
@@ -111,13 +114,63 @@ class TaskServiceTest {
     @Test
     void testRetrieveTasksForAProject_ShouldReturnTaskList() {
         Page<Task> taskPage = new PageImpl<>(List.of(task));
-        when(taskRepository.findAll(PageRequest.of(0, 10))).thenReturn(taskPage);
+        when(taskRepository.findAllByProjectId(1L, PageRequest.of(0, 10))).thenReturn(taskPage);
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        List<TaskDto> result = tasksService.retrieveTasksForAProject(PageRequest.of(0, 10));
+        List<TaskDto> result = tasksService.retrieveTasksForAProject(PageRequest.of(0, 10), 1L);
 
         assertEquals(1, result.size());
         assertEquals("Task for Testing", result.get(0).getName());
+    }
+
+    @Test
+    void testGetMyTasks_ShouldReturnTasksOfCurrentUser() {
+        User user = new User();
+        user.setId(1L);
+        Page<Task> taskPage = new PageImpl<>(List.of(task));
+
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(taskRepository.findByAssigneeId(1L, PageRequest.of(0, 10))).thenReturn(taskPage);
+        when(taskMapper.toDto(task)).thenReturn(taskDto);
+
+        List<TaskDto> result = tasksService.getMyTasks("user@example.com", PageRequest.of(0, 10));
+
+        assertEquals(1, result.size());
+        assertEquals("Task for Testing", result.get(0).getName());
+    }
+
+    @Test
+    void testGetMyTasks_UserNotFound_ShouldThrowException() {
+        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class,
+                () -> tasksService.getMyTasks("missing@example.com", PageRequest.of(0, 10)));
+    }
+
+    @Test
+    void testGetMyStatistics_ShouldCountTasksByStatus() {
+        User user = new User();
+        user.setId(1L);
+
+        Task notStarted = new Task();
+        notStarted.setStatus(TaskStatus.NOT_STARTED);
+        Task inProgress = new Task();
+        inProgress.setStatus(TaskStatus.IN_PROGRESS);
+        Task completedOne = new Task();
+        completedOne.setStatus(TaskStatus.COMPLETED);
+        Task completedTwo = new Task();
+        completedTwo.setStatus(TaskStatus.COMPLETED);
+
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(taskRepository.findAllTasksByAssigneeId(1L))
+                .thenReturn(List.of(notStarted, inProgress, completedOne, completedTwo));
+
+        TaskStatisticsDto stats = tasksService.getMyStatistics("user@example.com");
+
+        assertEquals(4L, stats.getTotalTasks());
+        assertEquals(1L, stats.getNotStartedTasks());
+        assertEquals(1L, stats.getInProgressTasks());
+        assertEquals(2L, stats.getCompletedTasks());
     }
 
     @Test
