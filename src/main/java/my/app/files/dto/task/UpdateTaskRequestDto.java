@@ -2,6 +2,7 @@ package my.app.files.dto.task;
 
 import lombok.Getter;
 import lombok.Setter;
+import my.app.files.model.TaskStatus;
 
 import java.time.LocalDate;
 
@@ -12,4 +13,6 @@ public class UpdateTaskRequestDto {
     private String description;
     private LocalDate dueDate;
     private Long assigneeId;
+
+    private TaskStatus status;
 }

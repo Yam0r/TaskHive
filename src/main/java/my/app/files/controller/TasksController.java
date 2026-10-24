@@ -4,11 +4,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
+import my.app.files.dto.task.TaskStatisticsDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
 import my.app.files.service.TasksService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,13 +30,24 @@ public class TasksController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TaskDto>> retrieveTasksForAProject(Pageable pageable) {
-        return ResponseEntity.ok(tasksService.retrieveTasksForAProject(pageable));
+    public ResponseEntity<List<TaskDto>> retrieveTasksForAProject(Pageable pageable, Long projectId) {
+        return ResponseEntity.ok(tasksService.retrieveTasksForAProject(pageable, projectId));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<TaskDto> retrieveTaskDetails(@PathVariable Long id) {
         return ResponseEntity.ok(tasksService.retrieveTaskDetails(id));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<TaskDto>> getMyTasks(@AuthenticationPrincipal UserDetails userDetails,
+                                                    Pageable pageable){
+        return ResponseEntity.ok(tasksService.getMyTasks(userDetails.getUsername(), pageable));
+    }
+
+    @GetMapping("/my/statistics")
+    public ResponseEntity<TaskStatisticsDto> getMyStatistics(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(tasksService.getMyStatistics(userDetails.getUsername()));
     }
 
     @PutMapping("/{id}")

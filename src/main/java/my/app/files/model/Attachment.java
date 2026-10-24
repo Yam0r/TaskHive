@@ -26,10 +26,10 @@ public class Attachment {
     private Task task;
 
     @Column(nullable = false, unique = true)
-    private String dropboxFileId;  // Уникальный идентификатор файла в Dropbox
+    private String dropboxFileId;
 
     @Column(nullable = false)
-    private String filename;  // Оригинальное название файла
+    private String filename;
 
     @Column(nullable = false)
     private LocalDateTime uploadDate;

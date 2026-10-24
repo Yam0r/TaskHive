@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import my.app.files.model.TaskStatus;
+
 import java.time.LocalDate;
 
 @Getter
@@ -18,4 +20,6 @@ public class TaskDto {
 
     private String description;
     private LocalDate dueDate;
+
+    private TaskStatus status;
 }
