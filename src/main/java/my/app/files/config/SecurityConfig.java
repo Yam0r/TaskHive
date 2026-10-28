@@ -2,6 +2,8 @@ package my.app.files.config;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
+import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import my.app.files.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
@@ -21,9 +23,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Collections;
-import java.util.List;
-
 @EnableMethodSecurity
 @RequiredArgsConstructor
 @Configuration
@@ -36,10 +35,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(){
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
-        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "DELETE","PUT", "PATCH", "OPTIONS"));
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "DELETE","PUT",
+                "PATCH", "OPTIONS"));
         corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));
 
         corsConfiguration.setAllowCredentials(true);
