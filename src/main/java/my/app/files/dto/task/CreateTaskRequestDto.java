@@ -3,11 +3,11 @@ package my.app.files.dto.task;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import my.app.files.model.TaskStatus;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import my.app.files.model.TaskStatus;
 
 @Getter
 @Setter

@@ -47,7 +47,8 @@ public class TasksController {
             description = "Retrieves a paginated list of tasks for a specific project.")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping
-    public ResponseEntity<List<TaskDto>> retrieveTasksForAProject(Pageable pageable, Long projectId) {
+    public ResponseEntity<List<TaskDto>> retrieveTasksForAProject(Pageable pageable,
+                                                                  Long projectId) {
         return ResponseEntity.ok(tasksService.retrieveTasksForAProject(pageable, projectId));
     }
 

@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-tasks-defaults
+      author: Yaroslav
+      changes:
+        - addDefaultValue:
+            tableName: tasks
+            columnName: priority
+            columnDataType: ENUM('LOW', 'MEDIUM', 'HIGH')
+            defaultValue: MEDIUM
+        - addDefaultValue:
+            tableName: tasks
+            columnName: status
+            columnDataType: ENUM('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED')
+            defaultValue: NOT_STARTED

@@ -23,3 +23,5 @@ databaseChangeLog:
       file: db/changes/insert-users.yaml
   - include:
       file: db/changes/insert-admins-roles-to-table.yaml
+  - include:
+      file: db/changes/add-tasks-defaults.yaml

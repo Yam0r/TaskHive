@@ -10,7 +10,11 @@ import my.app.files.dto.task.TaskDto;
 import my.app.files.dto.task.TaskStatisticsDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
 import my.app.files.mapper.TaskMapper;
-import my.app.files.model.*;
+import my.app.files.model.Label;
+import my.app.files.model.Project;
+import my.app.files.model.Task;
+import my.app.files.model.TaskStatus;
+import my.app.files.model.User;
 import my.app.files.repository.LabelRepository;
 import my.app.files.repository.ProjectRepository;
 import my.app.files.repository.TaskRepository;
@@ -60,7 +64,7 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
-    public List<TaskDto> getMyTasks(String userEmail, Pageable pageable){
+    public List<TaskDto> getMyTasks(String userEmail, Pageable pageable) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
