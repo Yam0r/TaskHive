@@ -31,7 +31,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     public AttachmentServiceImpl(AttachmentRepository attachmentRepository,
                                  TaskRepository taskRepository,
                                  AttachmentMapper attachmentMapper) {
-        Dotenv dotenv = Dotenv.load();
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         String appName = dotenv.get("MY_APP_NAME");
         String accessToken = dotenv.get("MY_DROPBOX_ACCESS_TOKEN");
 
