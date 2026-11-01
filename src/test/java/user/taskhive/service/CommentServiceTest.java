@@ -1,8 +1,9 @@
 package user.taskhive.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.times;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,19 +21,19 @@ import my.app.files.repository.TaskRepository;
 import my.app.files.repository.UserRepository;
 import my.app.files.service.impl.CommentServiceImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import user.taskhive.config.TestDataUtil;
 
-@SpringBootTest
-public class CommentServiceTest {
+@ExtendWith(MockitoExtension.class)
+class CommentServiceTest {
 
     @Mock
     private CommentRepository commentRepository;
@@ -50,132 +51,73 @@ public class CommentServiceTest {
     private CommentServiceImpl commentService;
 
     @Test
-    void shouldAddComment() {
-        CreateCommentRequestDto dto = new CreateCommentRequestDto();
-        dto.setTaskId(1L);
-        dto.setUserId(1L);
-        dto.setContent("This is a new comment.");
-        dto.setText("Optional text");
-
-        User user = TestDataUtil.createTestUser(1L, "testuser@example.com", "Test", "User");
-        Task task = TestDataUtil.createTestTask(TestDataUtil
-                .createTestProject(2L), "Task for Testing");
-
-        Comment commentWithoutId = new Comment();
-        commentWithoutId.setContent(dto.getContent());
-        commentWithoutId.setText("Optional text");
-        commentWithoutId.setTask(task);
-        commentWithoutId.setAuthor(user);
-
-        Comment savedComment = new Comment();
-        savedComment.setId(10L);
-        savedComment.setContent(dto.getContent());
-        savedComment.setText("Optional text");
-        savedComment.setTask(task);
-        savedComment.setAuthor(user);
-
-        CommentDto commentDto = new CommentDto();
-        commentDto.setId(10L);
-        commentDto.setContent(dto.getContent());
-        commentDto.setText("Optional text");
-        commentDto.setTaskId(1L);
-        commentDto.setUserId(1L);
-
+    void addComment_ValidRequest_SavesCommentWithTaskAndAuthor() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(commentMapper.toEntity(dto)).thenReturn(commentWithoutId);
-        when(commentRepository.save(Mockito.any(Comment.class))).thenReturn(savedComment);
-        when(commentMapper.toDto(savedComment)).thenReturn(commentDto);
+        User author = TestDataUtil.createTestUser(2L, "author@example.com", "John", "Doe");
+        when(userRepository.findById(2L)).thenReturn(Optional.of(author));
+        when(commentRepository.save(any(Comment.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        CommentDto commentDto = new CommentDto();
+        when(commentMapper.toDto(any(Comment.class))).thenReturn(commentDto);
 
-        ArgumentCaptor<Comment> commentCaptor = ArgumentCaptor.forClass(Comment.class);
+        CommentDto result = commentService.addComment(createRequest(1L, 2L));
 
-        CommentDto addedComment = commentService.addComment(dto);
-
-        assertThat(addedComment).isNotNull();
-        assertThat(addedComment.getId()).isEqualTo(10L);
-        assertThat(addedComment.getContent()).isEqualTo(dto.getContent());
-        assertThat(addedComment.getUserId()).isEqualTo(1L);
-
-        verify(commentRepository, times(1)).save(commentCaptor.capture());
-        Comment capturedComment = commentCaptor.getValue();
-
-        assertThat(capturedComment).isEqualToIgnoringGivenFields(commentWithoutId, "id");
-        assertThat(capturedComment.getText()).isEqualTo("Optional text");
+        ArgumentCaptor<Comment> captor = ArgumentCaptor.forClass(Comment.class);
+        verify(commentRepository).save(captor.capture());
+        Comment savedComment = captor.getValue();
+        assertThat(savedComment.getTask()).isSameAs(task);
+        assertThat(savedComment.getAuthor()).isSameAs(author);
+        assertThat(savedComment.getText()).isEqualTo("Comment text");
+        assertThat(savedComment.getContent()).isEqualTo("Comment content");
+        assertThat(result).isSameAs(commentDto);
     }
 
     @Test
-    void shouldThrowExceptionWhenTaskNotFound() {
-        CreateCommentRequestDto dto = new CreateCommentRequestDto();
-        dto.setTaskId(999L);
-        dto.setUserId(1L);
-        dto.setContent("This is a new comment.");
-
+    void addComment_TaskNotFound_ThrowsAndDoesNotSave() {
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> commentService.addComment(dto))
+        assertThatThrownBy(() -> commentService.addComment(createRequest(999L, 2L)))
                 .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("Task not found");
-
-        verify(taskRepository, times(1)).findById(999L);
+                .hasMessage("Task not found");
+        verify(commentRepository, never()).save(any());
     }
 
     @Test
-    void shouldGetCommentsForTask() {
-        User user1 = new User();
-        user1.setId(1L);
-        user1.setUsername("TestUser");
+    void addComment_AuthorNotFound_ThrowsAndDoesNotSave() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        User user2 = new User();
-        user2.setId(2L);
-        user2.setUsername("Test2User");
+        assertThatThrownBy(() -> commentService.addComment(createRequest(1L, 999L)))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage("User not found");
+        verify(commentRepository, never()).save(any());
+    }
 
-        Comment comment1 = new Comment();
-        comment1.setId(1L);
-        comment1.setContent("First comment");
-        comment1.setText("first text");
-        comment1.setAuthor(user1);
-
-        Comment comment2 = new Comment();
-        comment2.setId(2L);
-        comment2.setContent("Second comment");
-        comment2.setText("second text");
-        comment2.setAuthor(user2);
-
-        Task task = TestDataUtil.createTestTask(TestDataUtil
-                .createTestProject(2L), "Task for Testing");
-        comment1.setTask(task);
-        comment2.setTask(task);
-
-        List<Comment> commentList = List.of(comment1, comment2);
-        Page<Comment> commentPage = new PageImpl<>(commentList);
+    @Test
+    void getCommentsForTask_MapsEveryComment() {
+        Comment first = new Comment();
+        Comment second = new Comment();
         Pageable pageable = PageRequest.of(0, 10);
-
-        when(commentRepository.findByTaskId(1L, pageable)).thenReturn(commentPage);
-
-        CommentDto commentDto1 = new CommentDto();
-        commentDto1.setId(1L);
-        commentDto1.setContent("First comment");
-        commentDto1.setText("first text");
-        commentDto1.setUserId(1L);
-        commentDto1.setTaskId(1L);
-
-        CommentDto commentDto2 = new CommentDto();
-        commentDto2.setId(2L);
-        commentDto2.setContent("Second comment");
-        commentDto2.setText("second text");
-        commentDto2.setUserId(2L);
-        commentDto2.setTaskId(1L);
-
-        when(commentMapper.toDto(comment1)).thenReturn(commentDto1);
-        when(commentMapper.toDto(comment2)).thenReturn(commentDto2);
+        when(commentRepository.findByTaskId(1L, pageable))
+                .thenReturn(new PageImpl<>(List.of(first, second)));
+        CommentDto firstDto = new CommentDto();
+        when(commentMapper.toDto(first)).thenReturn(firstDto);
+        CommentDto secondDto = new CommentDto();
+        when(commentMapper.toDto(second)).thenReturn(secondDto);
 
         Page<CommentDto> result = commentService.getCommentsForTask(1L, pageable);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getContent().get(0).getContent()).isEqualTo("First comment");
-        assertThat(result.getContent().get(1).getContent()).isEqualTo("Second comment");
+        assertThat(result.getContent()).containsExactly(firstDto, secondDto);
+    }
 
-        verify(commentRepository, times(1)).findByTaskId(1L, pageable);
+    private CreateCommentRequestDto createRequest(Long taskId, Long userId) {
+        CreateCommentRequestDto requestDto = new CreateCommentRequestDto();
+        requestDto.setTaskId(taskId);
+        requestDto.setUserId(userId);
+        requestDto.setText("Comment text");
+        requestDto.setContent("Comment content");
+        return requestDto;
     }
 }

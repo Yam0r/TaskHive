@@ -1,21 +1,20 @@
 package user.taskhive.service;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.times;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityNotFoundException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import my.app.files.dto.task.CreateTaskRequestDto;
 import my.app.files.dto.task.TaskDto;
 import my.app.files.dto.task.TaskStatisticsDto;
+import my.app.files.dto.task.UpdateTaskRequestDto;
 import my.app.files.mapper.TaskMapper;
 import my.app.files.model.Label;
 import my.app.files.model.Project;
@@ -27,15 +26,15 @@ import my.app.files.repository.ProjectRepository;
 import my.app.files.repository.TaskRepository;
 import my.app.files.repository.UserRepository;
 import my.app.files.service.impl.TasksServiceImpl;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import user.taskhive.config.TestDataUtil;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
@@ -58,166 +57,183 @@ class TaskServiceTest {
     @InjectMocks
     private TasksServiceImpl tasksService;
 
-    private Task task;
-    private TaskDto taskDto;
-
-    @BeforeEach
-    void setUp() {
-        task = new Task();
-        task.setId(1L);
-        task.setName("Task for Testing");
-
-        taskDto = new TaskDto();
-        taskDto.setId(1L);
-        taskDto.setName("Task for Testing");
-    }
-
     @Test
-    void testRetrieveTaskDetails_ShouldReturnTaskDto() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        when(taskMapper.toDto(task)).thenReturn(taskDto);
-
-        TaskDto result = tasksService.retrieveTaskDetails(1L);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("Task for Testing", result.getName());
-    }
-
-    @Test
-    void testRetrieveTaskDetails_ShouldThrowException() {
-        when(taskRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThrows(EntityNotFoundException.class, () -> tasksService.retrieveTaskDetails(99L));
-    }
-
-    @Test
-    void testCreateANewTask_ShouldReturnTaskDto() {
+    void createANewTask_ValidRequest_SetsDefaultStatusProjectAndAssignee() {
         CreateTaskRequestDto requestDto = new CreateTaskRequestDto();
-        requestDto.setName("New Task");
         requestDto.setProjectId(1L);
-
-        Project project = new Project();
-        project.setId(1L);
-
+        requestDto.setAssigneeId(2L);
+        when(taskMapper.toEntity(requestDto)).thenReturn(new Task());
+        Project project = TestDataUtil.createTestProject(1L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
-        when(taskMapper.toEntity(requestDto)).thenReturn(task);
-        when(taskRepository.save(task)).thenReturn(task);
-        when(taskMapper.toDto(task)).thenReturn(taskDto);
+        User assignee = TestDataUtil.createTestUser(2L, "assignee@example.com", "John", "Doe");
+        when(userRepository.findById(2L)).thenReturn(Optional.of(assignee));
+        when(taskRepository.save(any(Task.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        TaskDto taskDto = new TaskDto();
+        when(taskMapper.toDto(any(Task.class))).thenReturn(taskDto);
 
         TaskDto result = tasksService.createANewTask(requestDto);
 
-        assertNotNull(result);
-        assertEquals("Task for Testing", result.getName());
+        ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
+        verify(taskRepository).save(captor.capture());
+        Task savedTask = captor.getValue();
+        assertThat(savedTask.getStatus()).isEqualTo(TaskStatus.NOT_STARTED);
+        assertThat(savedTask.getProject()).isSameAs(project);
+        assertThat(savedTask.getAssignee()).isSameAs(assignee);
+        assertThat(result).isSameAs(taskDto);
+        verifyNoInteractions(labelRepository);
     }
 
     @Test
-    void testRetrieveTasksForAProject_ShouldReturnTaskList() {
-        Page<Task> taskPage = new PageImpl<>(List.of(task));
-        when(taskRepository.findAllByProjectId(1L, PageRequest.of(0, 10))).thenReturn(taskPage);
+    void createANewTask_ProjectNotFound_ThrowsAndDoesNotSave() {
+        CreateTaskRequestDto requestDto = new CreateTaskRequestDto();
+        requestDto.setProjectId(99L);
+        when(taskMapper.toEntity(requestDto)).thenReturn(new Task());
+        when(projectRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tasksService.createANewTask(requestDto))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage("Project not found");
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void retrieveTaskDetails_ExistingId_ReturnsMappedTask() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        TaskDto taskDto = new TaskDto();
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        List<TaskDto> result = tasksService.retrieveTasksForAProject(PageRequest.of(0, 10), 1L);
-
-        assertEquals(1, result.size());
-        assertEquals("Task for Testing", result.get(0).getName());
+        assertThat(tasksService.retrieveTaskDetails(1L)).isSameAs(taskDto);
     }
 
     @Test
-    void testGetMyTasks_ShouldReturnTasksOfCurrentUser() {
-        User user = new User();
-        user.setId(1L);
-        Page<Task> taskPage = new PageImpl<>(List.of(task));
+    void retrieveTaskDetails_NonExistingId_Throws() {
+        when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
+        assertThatThrownBy(() -> tasksService.retrieveTaskDetails(99L))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage("Task not found");
+    }
+
+    @Test
+    void retrieveTasksForAProject_ReturnsMappedTasks() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(taskRepository.findAllByProjectId(1L, pageable))
+                .thenReturn(new PageImpl<>(List.of(task)));
+        TaskDto taskDto = new TaskDto();
+        when(taskMapper.toDto(task)).thenReturn(taskDto);
+
+        List<TaskDto> result = tasksService.retrieveTasksForAProject(pageable, 1L);
+
+        assertThat(result).containsExactly(taskDto);
+    }
+
+    @Test
+    void getMyTasks_ExistingUser_ReturnsTasksAssignedToUser() {
+        User user = TestDataUtil.createTestUser(1L, "user@example.com", "John", "Doe");
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-        when(taskRepository.findByAssigneeId(1L, PageRequest.of(0, 10))).thenReturn(taskPage);
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(taskRepository.findByAssigneeId(1L, pageable))
+                .thenReturn(new PageImpl<>(List.of(task)));
+        TaskDto taskDto = new TaskDto();
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        List<TaskDto> result = tasksService.getMyTasks("user@example.com", PageRequest.of(0, 10));
+        List<TaskDto> result = tasksService.getMyTasks("user@example.com", pageable);
 
-        assertEquals(1, result.size());
-        assertEquals("Task for Testing", result.get(0).getName());
+        assertThat(result).containsExactly(taskDto);
     }
 
     @Test
-    void testGetMyTasks_UserNotFound_ShouldThrowException() {
+    void getMyTasks_UnknownUser_Throws() {
         when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class,
-                () -> tasksService.getMyTasks("missing@example.com", PageRequest.of(0, 10)));
+        assertThatThrownBy(() -> tasksService.getMyTasks("missing@example.com",
+                PageRequest.of(0, 10)))
+                .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
-    void testGetMyStatistics_ShouldCountTasksByStatus() {
-        User user = new User();
-        user.setId(1L);
-
-        Task notStarted = new Task();
-        notStarted.setStatus(TaskStatus.NOT_STARTED);
-        Task inProgress = new Task();
-        inProgress.setStatus(TaskStatus.IN_PROGRESS);
-        Task completedOne = new Task();
-        completedOne.setStatus(TaskStatus.COMPLETED);
-        Task completedTwo = new Task();
-        completedTwo.setStatus(TaskStatus.COMPLETED);
-
+    void getMyStatistics_CountsTasksByStatus() {
+        User user = TestDataUtil.createTestUser(1L, "user@example.com", "John", "Doe");
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-        when(taskRepository.findAllTasksByAssigneeId(1L))
-                .thenReturn(List.of(notStarted, inProgress, completedOne, completedTwo));
+        when(taskRepository.findAllTasksByAssigneeId(1L)).thenReturn(List.of(
+                taskWithStatus(TaskStatus.NOT_STARTED),
+                taskWithStatus(TaskStatus.IN_PROGRESS),
+                taskWithStatus(TaskStatus.COMPLETED),
+                taskWithStatus(TaskStatus.COMPLETED)));
 
         TaskStatisticsDto stats = tasksService.getMyStatistics("user@example.com");
 
-        assertEquals(4L, stats.getTotalTasks());
-        assertEquals(1L, stats.getNotStartedTasks());
-        assertEquals(1L, stats.getInProgressTasks());
-        assertEquals(2L, stats.getCompletedTasks());
+        assertThat(stats.getTotalTasks()).isEqualTo(4L);
+        assertThat(stats.getNotStartedTasks()).isEqualTo(1L);
+        assertThat(stats.getInProgressTasks()).isEqualTo(1L);
+        assertThat(stats.getCompletedTasks()).isEqualTo(2L);
     }
 
     @Test
-    void testAssignLabelToTask_ShouldAddLabel() {
-        Label label = new Label();
-        label.setId(1L);
-        label.setName("Important");
+    void updateTask_ExistingId_AppliesChangesAndSaves() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        UpdateTaskRequestDto requestDto = new UpdateTaskRequestDto();
+        requestDto.setName("Updated Task");
 
+        tasksService.updateTask(1L, requestDto);
+
+        verify(taskMapper).updateTaskFromDto(requestDto, task);
+        verify(taskRepository).save(task);
+    }
+
+    @Test
+    void assignLabelToTask_AddsLabelAndSaves() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        Label label = TestDataUtil.createTestLabel("Important", "red");
+        when(labelRepository.findById(1L)).thenReturn(Optional.of(label));
+
+        tasksService.assignLabelToTask(1L, 1L);
+
+        assertThat(task.getLabels()).containsExactly(label);
+        verify(taskRepository).save(task);
+    }
+
+    @Test
+    void removeLabelFromTask_RemovesLabelAndSaves() {
+        Label label = TestDataUtil.createTestLabel("Important", "red");
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        task.getLabels().add(label);
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(labelRepository.findById(1L)).thenReturn(Optional.of(label));
-        when(taskRepository.save(task)).thenReturn(task);
-        when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        TaskDto result = tasksService.assignLabelToTask(1L, 1L);
+        tasksService.removeLabelFromTask(1L, 1L);
 
-        assertNotNull(result);
+        assertThat(task.getLabels()).isEmpty();
+        verify(taskRepository).save(task);
     }
 
     @Test
-    void testRemoveLabelFromTask_ShouldRemoveLabel() {
-        Label label = new Label();
-        label.setId(1L);
-        label.setName("Important");
-        task.setLabels(new HashSet<>(Set.of(label)));
-
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        when(labelRepository.findById(1L)).thenReturn(Optional.of(label));
-        when(taskRepository.save(task)).thenReturn(task);
-        when(taskMapper.toDto(task)).thenReturn(taskDto);
-
-        TaskDto result = tasksService.removeLabelFromTask(1L, 1L);
-
-        assertNotNull(result);
-    }
-
-    @Test
-    void testDeleteTask_ShouldDeleteTask() {
+    void deleteTask_ExistingId_DeletesIt() {
         when(taskRepository.existsById(1L)).thenReturn(true);
 
-        assertDoesNotThrow(() -> tasksService.deleteTask(1L));
-        verify(taskRepository, times(1)).deleteById(1L);
+        tasksService.deleteTask(1L);
+
+        verify(taskRepository).deleteById(1L);
     }
 
     @Test
-    void testDeleteTask_ShouldThrowException() {
+    void deleteTask_NonExistingId_ThrowsAndDoesNotDelete() {
         when(taskRepository.existsById(99L)).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class, () -> tasksService.deleteTask(99L));
+        assertThatThrownBy(() -> tasksService.deleteTask(99L))
+                .isInstanceOf(EntityNotFoundException.class);
+        verify(taskRepository, never()).deleteById(any());
+    }
+
+    private Task taskWithStatus(TaskStatus status) {
+        Task task = new Task();
+        task.setStatus(status);
+        return task;
     }
 }
