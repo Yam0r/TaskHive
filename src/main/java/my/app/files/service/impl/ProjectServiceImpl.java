@@ -10,6 +10,7 @@ import my.app.files.mapper.ProjectMapper;
 import my.app.files.model.Project;
 import my.app.files.model.User;
 import my.app.files.repository.ProjectRepository;
+import my.app.files.repository.UserRepository;
 import my.app.files.service.ProjectService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,19 +22,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectMapper projectMapper;
+    private final UserRepository userRepository;
+
+    private User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
 
     @Override
-    public ProjectDto createANewProject(CreateProjectRequestDto createProjectRequestDto,
-                                        User user) {
-        Project project = projectMapper.toProject(createProjectRequestDto);
-        project.setUser(user);
-        Project savedProject = projectRepository.save(project);
-        return projectMapper.toProjectDto(savedProject);
+    public ProjectDto createANewProject(CreateProjectRequestDto requestDto, String userEmail) {
+        Project project = projectMapper.toProject(requestDto);
+        project.setUser(getUserByEmail(userEmail));
+        return projectMapper.toProjectDto(projectRepository.save(project));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProjectDto> retrieveUsersProjects(Pageable pageable, User user) {
+    public List<ProjectDto> retrieveUsersProjects(Pageable pageable, String userEmail) {
+        User user = getUserByEmail(userEmail);
         return projectRepository.findByUserId(user.getId(), pageable).stream()
                 .map(projectMapper::toProjectDto)
                 .toList();

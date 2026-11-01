@@ -16,7 +16,12 @@ public interface ProjectMapper {
     ProjectDto toProjectDto(Project project);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "status", ignore = true)
     Project toProject(CreateProjectRequestDto requestDto);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "status", ignore = true)
     void updateProjectFromDto(UpdateProjectRequestDto requestDto, @MappingTarget Project project);
 }

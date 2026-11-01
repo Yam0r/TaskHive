@@ -1,13 +1,14 @@
 package my.app.files.service.impl;
 
-import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.DbxException;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.FileMetadata;
-import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 import my.app.files.dto.attachment.AttachmentDto;
 import my.app.files.mapper.AttachmentMapper;
 import my.app.files.model.Attachment;
@@ -22,25 +23,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class AttachmentServiceImpl implements AttachmentService {
     private final AttachmentRepository attachmentRepository;
     private final TaskRepository taskRepository;
     private final DbxClientV2 dropboxClient;
     private final AttachmentMapper attachmentMapper;
-
-    public AttachmentServiceImpl(AttachmentRepository attachmentRepository,
-                                 TaskRepository taskRepository,
-                                 AttachmentMapper attachmentMapper) {
-        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        String appName = dotenv.get("MY_APP_NAME");
-        String accessToken = dotenv.get("MY_DROPBOX_ACCESS_TOKEN");
-
-        DbxRequestConfig config = DbxRequestConfig.newBuilder(appName).build();
-        this.dropboxClient = new DbxClientV2(config, accessToken);
-        this.attachmentRepository = attachmentRepository;
-        this.taskRepository = taskRepository;
-        this.attachmentMapper = attachmentMapper;
-    }
 
     @Override
     @Transactional
@@ -48,25 +36,21 @@ public class AttachmentServiceImpl implements AttachmentService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
 
+        FileMetadata metadata;
         try (InputStream inputStream = file.getInputStream()) {
-            FileMetadata metadata = dropboxClient.files()
+            metadata = dropboxClient.files()
                     .uploadBuilder("/" + file.getOriginalFilename())
                     .uploadAndFinish(inputStream);
-
-            AttachmentDto data = new AttachmentDto(
-                    null,
-                    file.getOriginalFilename(),
-                    metadata.getId(),
-                    LocalDateTime.now()
-            );
-
-            Attachment attachment = attachmentMapper.toEntity(data);
-            Attachment savedAttachment = attachmentRepository.save(attachment);
-
-            return attachmentMapper.toDto(savedAttachment);
-        } catch (Exception e) {
+        } catch (IOException | DbxException e) {
             throw new RuntimeException("Failed to upload file", e);
         }
+
+        Attachment attachment = new Attachment();
+        attachment.setTask(task);
+        attachment.setFilename(file.getOriginalFilename());
+        attachment.setDropboxFileId(metadata.getId());
+        attachment.setUploadDate(LocalDateTime.now());
+        return attachmentMapper.toDto(attachmentRepository.save(attachment));
     }
 
     @Override
@@ -75,4 +59,3 @@ public class AttachmentServiceImpl implements AttachmentService {
                 .map(attachmentMapper::toDto);
     }
 }
-
