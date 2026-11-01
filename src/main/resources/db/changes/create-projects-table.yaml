@@ -30,7 +30,7 @@ databaseChangeLog:
                   type: DATE
               - column:
                   name: status
-                  type: ENUM('INITIATED', 'IN_PROGRESS', 'COMPLETED')
+                  type: VARCHAR(20)
                   constraints:
                     nullable: false
               - column:

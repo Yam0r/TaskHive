@@ -22,12 +22,12 @@ databaseChangeLog:
                   type: TEXT
               - column:
                   name: priority
-                  type: ENUM('LOW', 'MEDIUM', 'HIGH')
+                  type: VARCHAR(20)
                   constraints:
                     nullable: false
               - column:
                   name: status
-                  type: ENUM('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED')
+                  type: VARCHAR(20)
                   constraints:
                     nullable: false
               - column:
