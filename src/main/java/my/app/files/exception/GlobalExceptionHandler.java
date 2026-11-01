@@ -27,9 +27,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            EntityNotFoundException.class
+            EntityNotFoundException.class,
+            jakarta.persistence.EntityNotFoundException.class
     })
-    public ResponseEntity<Object> handleEntityNotFound(EntityNotFoundException ex) {
+    public ResponseEntity<Object> handleEntityNotFound(RuntimeException ex) {
         return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 

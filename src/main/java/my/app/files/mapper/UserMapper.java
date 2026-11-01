@@ -9,8 +9,10 @@ import org.mapstruct.Mapping;
 
 @Mapper(config = MapperConfig.class)
 public interface UserMapper {
-    UserResponseDto toUserResponse(User savedUser);
+    UserResponseDto toUserResponse(User user);
 
-    @Mapping(target = "username", source = "username")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     User toUser(UserRegistrationRequestDto request);
 }

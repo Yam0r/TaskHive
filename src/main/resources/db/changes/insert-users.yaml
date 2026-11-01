@@ -6,20 +6,18 @@ databaseChangeLog:
         - insert:
             tableName: users
             columns:
-              - column: { name: id, valueNumeric: 1 }
-              - column: { name: email, value: "admin@gmail.com" }
+              - column: { name: email, value: "alice@gmail.com" }
               - column: { name: password, value: "$2a$10$8SPZoBhft5bWzJ0aS2bs7uFVxjKOmDGJULNcWrhkUp8Oeszj8vlUa" }
-              - column: { name: username, value: "admin" }
+              - column: { name: username, value: "Alice" }
               - column: { name: is_deleted, valueBoolean: false }
-              - column: { name: first_name, value: "Admin" }
-              - column: { name: last_name, value: "Admin" }
+              - column: { name: first_name, value: "Alice" }
+              - column: { name: last_name, value: "Marley" }
         - insert:
             tableName: users
             columns:
-              - column: { name: id, valueNumeric: 2 }
               - column: { name: email, value: "bob@gmail.com" }
               - column: { name: password, value: "$2a$10$8SPZoBhft5bWzJ0aS2bs7uFVxjKOmDGJULNcWrhkUp8Oeszj8vlUa" }
-              - column: { name: username, value: "Bobik" }
+              - column: { name: username, value: "Bob" }
               - column: { name: is_deleted, valueBoolean: false }
               - column: { name: first_name, value: "Bob" }
               - column: { name: last_name, value: "Marley" }
