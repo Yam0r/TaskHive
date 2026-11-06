@@ -1,0 +1,59 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-cascade-delete-to-foreign-keys
+      author: Yaroslav
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: tasks
+            constraintName: fk_tasks_projects
+        - addForeignKeyConstraint:
+            baseTableName: tasks
+            baseColumnNames: project_id
+            constraintName: fk_tasks_projects
+            referencedTableName: projects
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - dropForeignKeyConstraint:
+            baseTableName: tasks
+            constraintName: fk_tasks_users
+        - addForeignKeyConstraint:
+            baseTableName: tasks
+            baseColumnNames: assignee_id
+            constraintName: fk_tasks_users
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: SET NULL
+
+        - dropForeignKeyConstraint:
+            baseTableName: comments
+            constraintName: fk_comments_tasks
+        - addForeignKeyConstraint:
+            baseTableName: comments
+            baseColumnNames: task_id
+            constraintName: fk_comments_tasks
+            referencedTableName: tasks
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - dropForeignKeyConstraint:
+            baseTableName: attachments
+            constraintName: fk_attachments_tasks
+        - addForeignKeyConstraint:
+            baseTableName: attachments
+            baseColumnNames: task_id
+            constraintName: fk_attachments_tasks
+            referencedTableName: tasks
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - dropForeignKeyConstraint:
+            baseTableName: task_labels
+            constraintName: fk_task_labels_tasks
+        - addForeignKeyConstraint:
+            baseTableName: task_labels
+            baseColumnNames: task_id
+            constraintName: fk_task_labels_tasks
+            referencedTableName: tasks
+            referencedColumnNames: id
+            onDelete: CASCADE

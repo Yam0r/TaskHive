@@ -11,10 +11,10 @@ public interface ProjectService {
 
     List<ProjectDto> retrieveUsersProjects(Pageable pageable, String userEmail);
 
-    ProjectDto retrieveProjectDetails(Long id);
+    ProjectDto retrieveProjectDetails(Long id, String userEmail);
 
-    void updateProject(Long id, UpdateProjectRequestDto requestDto);
+    void updateProject(Long id, UpdateProjectRequestDto requestDto, String userEmail);
 
-    void deleteProject(Long id);
+    void deleteProject(Long id, String userEmail);
 }
 
