@@ -47,9 +47,9 @@ class TasksControllerTest {
     private TasksService tasksService;
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void createTask_ValidRequest_ReturnsCreatedTask() throws Exception {
-        when(tasksService.createANewTask(any(CreateTaskRequestDto.class)))
+        when(tasksService.createANewTask(any(CreateTaskRequestDto.class), eq(USER_EMAIL)))
                 .thenReturn(createTaskDto(10L, "New Task"));
 
         mockMvc.perform(post("/tasks")
@@ -59,11 +59,12 @@ class TasksControllerTest {
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.name").value("New Task"));
 
-        verify(tasksService).createANewTask(argThat(dto -> "New Task".equals(dto.getName())));
+        verify(tasksService).createANewTask(
+                argThat(dto -> "New Task".equals(dto.getName())), eq(USER_EMAIL));
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void createTask_BlankName_ReturnsBadRequest() throws Exception {
         CreateTaskRequestDto requestDto = createValidRequest();
         requestDto.setName("");
@@ -77,9 +78,10 @@ class TasksControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void getTasksForProject_PassesProjectIdAndPaging() throws Exception {
-        when(tasksService.retrieveTasksForAProject(any(Pageable.class), eq(1L)))
+        when(tasksService.retrieveTasksForAProject(any(Pageable.class), eq(1L),
+                eq(USER_EMAIL)))
                 .thenReturn(List.of(createTaskDto(1L, "Task for Testing")));
 
         mockMvc.perform(get("/tasks")
@@ -92,13 +94,14 @@ class TasksControllerTest {
 
         verify(tasksService).retrieveTasksForAProject(
                 argThat(pageable -> pageable.getPageNumber() == 2 && pageable.getPageSize() == 5),
-                eq(1L));
+                eq(1L), eq(USER_EMAIL));
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void getTask_ExistingId_ReturnsTask() throws Exception {
-        when(tasksService.retrieveTaskDetails(1L)).thenReturn(createTaskDto(1L, "Task"));
+        when(tasksService.retrieveTaskDetails(1L, USER_EMAIL))
+                .thenReturn(createTaskDto(1L, "Task"));
 
         mockMvc.perform(get("/tasks/1"))
                 .andExpect(status().isOk())
@@ -107,9 +110,9 @@ class TasksControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void getTask_NonExistingId_ReturnsNotFound() throws Exception {
-        when(tasksService.retrieveTaskDetails(99L))
+        when(tasksService.retrieveTaskDetails(99L, USER_EMAIL))
                 .thenThrow(new EntityNotFoundException("Task not found"));
 
         mockMvc.perform(get("/tasks/99"))
@@ -148,7 +151,7 @@ class TasksControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void updateTask_ValidRequest_ReturnsNoContent() throws Exception {
         UpdateTaskRequestDto requestDto = new UpdateTaskRequestDto();
         requestDto.setName("Updated Task");
@@ -159,46 +162,48 @@ class TasksControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(tasksService).updateTask(eq(1L),
-                argThat(dto -> "Updated Task".equals(dto.getName())));
+                argThat(dto -> "Updated Task".equals(dto.getName())), eq(USER_EMAIL));
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void deleteTask_ExistingId_ReturnsNoContent() throws Exception {
         mockMvc.perform(delete("/tasks/1"))
                 .andExpect(status().isNoContent());
 
-        verify(tasksService).deleteTask(1L);
+        verify(tasksService).deleteTask(1L, USER_EMAIL);
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void assignLabel_ReturnsUpdatedTask() throws Exception {
-        when(tasksService.assignLabelToTask(1L, 3L)).thenReturn(createTaskDto(1L, "Task"));
+        when(tasksService.assignLabelToTask(1L, 3L, USER_EMAIL))
+                .thenReturn(createTaskDto(1L, "Task"));
 
         mockMvc.perform(post("/tasks/1/labels/3"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1));
 
-        verify(tasksService).assignLabelToTask(1L, 3L);
+        verify(tasksService).assignLabelToTask(1L, 3L, USER_EMAIL);
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void removeLabel_ReturnsUpdatedTask() throws Exception {
-        when(tasksService.removeLabelFromTask(1L, 3L)).thenReturn(createTaskDto(1L, "Task"));
+        when(tasksService.removeLabelFromTask(1L, 3L, USER_EMAIL))
+                .thenReturn(createTaskDto(1L, "Task"));
 
         mockMvc.perform(delete("/tasks/1/labels/3"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1));
 
-        verify(tasksService).removeLabelFromTask(1L, 3L);
+        verify(tasksService).removeLabelFromTask(1L, 3L, USER_EMAIL);
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void assignLabel_UnknownLabel_ReturnsNotFound() throws Exception {
-        when(tasksService.assignLabelToTask(1L, 99L))
+        when(tasksService.assignLabelToTask(1L, 99L, USER_EMAIL))
                 .thenThrow(new EntityNotFoundException("Label not found"));
 
         mockMvc.perform(post("/tasks/1/labels/99"))

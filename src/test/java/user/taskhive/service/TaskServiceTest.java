@@ -38,6 +38,7 @@ import user.taskhive.config.TestDataUtil;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
+    private static final String OWNER_EMAIL = "owner@example.com";
 
     @Mock
     private TaskRepository taskRepository;
@@ -64,7 +65,8 @@ class TaskServiceTest {
         requestDto.setAssigneeId(2L);
         when(taskMapper.toEntity(requestDto)).thenReturn(new Task());
         Project project = TestDataUtil.createTestProject(1L);
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(project));
         User assignee = TestDataUtil.createTestUser(2L, "assignee@example.com", "John", "Doe");
         when(userRepository.findById(2L)).thenReturn(Optional.of(assignee));
         when(taskRepository.save(any(Task.class)))
@@ -72,7 +74,7 @@ class TaskServiceTest {
         TaskDto taskDto = new TaskDto();
         when(taskMapper.toDto(any(Task.class))).thenReturn(taskDto);
 
-        TaskDto result = tasksService.createANewTask(requestDto);
+        TaskDto result = tasksService.createANewTask(requestDto, OWNER_EMAIL);
 
         ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
         verify(taskRepository).save(captor.capture());
@@ -85,13 +87,14 @@ class TaskServiceTest {
     }
 
     @Test
-    void createANewTask_ProjectNotFound_ThrowsAndDoesNotSave() {
+    void createANewTask_ProjectNotFoundOrNotOwned_ThrowsAndDoesNotSave() {
         CreateTaskRequestDto requestDto = new CreateTaskRequestDto();
         requestDto.setProjectId(99L);
         when(taskMapper.toEntity(requestDto)).thenReturn(new Task());
-        when(projectRepository.findById(99L)).thenReturn(Optional.empty());
+        when(projectRepository.findByIdAndUserEmail(99L, OWNER_EMAIL))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> tasksService.createANewTask(requestDto))
+        assertThatThrownBy(() -> tasksService.createANewTask(requestDto, OWNER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Project not found");
         verify(taskRepository, never()).save(any());
@@ -100,34 +103,52 @@ class TaskServiceTest {
     @Test
     void retrieveTaskDetails_ExistingId_ReturnsMappedTask() {
         Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndProjectUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(task));
         TaskDto taskDto = new TaskDto();
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        assertThat(tasksService.retrieveTaskDetails(1L)).isSameAs(taskDto);
+        assertThat(tasksService.retrieveTaskDetails(1L, OWNER_EMAIL)).isSameAs(taskDto);
     }
 
     @Test
-    void retrieveTaskDetails_NonExistingId_Throws() {
-        when(taskRepository.findById(99L)).thenReturn(Optional.empty());
+    void retrieveTaskDetails_NotFoundOrNotOwned_Throws() {
+        when(taskRepository.findByIdAndProjectUserEmail(99L, OWNER_EMAIL))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> tasksService.retrieveTaskDetails(99L))
+        assertThatThrownBy(() -> tasksService.retrieveTaskDetails(99L, OWNER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Task not found");
     }
 
     @Test
-    void retrieveTasksForAProject_ReturnsMappedTasks() {
-        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+    void retrieveTasksForAProject_OwnProject_ReturnsMappedTasks() {
+        Project project = TestDataUtil.createTestProject(1L);
+        when(projectRepository.findByIdAndUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(project));
+        Task task = TestDataUtil.createTestTask(project, "Task");
         PageRequest pageable = PageRequest.of(0, 10);
         when(taskRepository.findAllByProjectId(1L, pageable))
                 .thenReturn(new PageImpl<>(List.of(task)));
         TaskDto taskDto = new TaskDto();
         when(taskMapper.toDto(task)).thenReturn(taskDto);
 
-        List<TaskDto> result = tasksService.retrieveTasksForAProject(pageable, 1L);
+        List<TaskDto> result = tasksService.retrieveTasksForAProject(pageable, 1L,
+                OWNER_EMAIL);
 
         assertThat(result).containsExactly(taskDto);
+    }
+
+    @Test
+    void retrieveTasksForAProject_NotOwnedProject_ThrowsAndDoesNotLoadTasks() {
+        when(projectRepository.findByIdAndUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.empty());
+        PageRequest pageable = PageRequest.of(0, 10);
+
+        assertThatThrownBy(() -> tasksService.retrieveTasksForAProject(pageable, 1L,
+                OWNER_EMAIL))
+                .isInstanceOf(EntityNotFoundException.class);
+        verify(taskRepository, never()).findAllByProjectId(any(), any());
     }
 
     @Test
@@ -176,11 +197,12 @@ class TaskServiceTest {
     @Test
     void updateTask_ExistingId_AppliesChangesAndSaves() {
         Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndProjectUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(task));
         UpdateTaskRequestDto requestDto = new UpdateTaskRequestDto();
         requestDto.setName("Updated Task");
 
-        tasksService.updateTask(1L, requestDto);
+        tasksService.updateTask(1L, requestDto, OWNER_EMAIL);
 
         verify(taskMapper).updateTaskFromDto(requestDto, task);
         verify(taskRepository).save(task);
@@ -189,11 +211,12 @@ class TaskServiceTest {
     @Test
     void assignLabelToTask_AddsLabelAndSaves() {
         Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndProjectUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(task));
         Label label = TestDataUtil.createTestLabel("Important", "red");
         when(labelRepository.findById(1L)).thenReturn(Optional.of(label));
 
-        tasksService.assignLabelToTask(1L, 1L);
+        tasksService.assignLabelToTask(1L, 1L, OWNER_EMAIL);
 
         assertThat(task.getLabels()).containsExactly(label);
         verify(taskRepository).save(task);
@@ -204,31 +227,35 @@ class TaskServiceTest {
         Label label = TestDataUtil.createTestLabel("Important", "red");
         Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
         task.getLabels().add(label);
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndProjectUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(task));
         when(labelRepository.findById(1L)).thenReturn(Optional.of(label));
 
-        tasksService.removeLabelFromTask(1L, 1L);
+        tasksService.removeLabelFromTask(1L, 1L, OWNER_EMAIL);
 
         assertThat(task.getLabels()).isEmpty();
         verify(taskRepository).save(task);
     }
 
     @Test
-    void deleteTask_ExistingId_DeletesIt() {
-        when(taskRepository.existsById(1L)).thenReturn(true);
+    void deleteTask_OwnTask_DeletesIt() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        when(taskRepository.findByIdAndProjectUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(task));
 
-        tasksService.deleteTask(1L);
+        tasksService.deleteTask(1L, OWNER_EMAIL);
 
-        verify(taskRepository).deleteById(1L);
+        verify(taskRepository).delete(task);
     }
 
     @Test
-    void deleteTask_NonExistingId_ThrowsAndDoesNotDelete() {
-        when(taskRepository.existsById(99L)).thenReturn(false);
+    void deleteTask_NotFoundOrNotOwned_ThrowsAndDoesNotDelete() {
+        when(taskRepository.findByIdAndProjectUserEmail(99L, OWNER_EMAIL))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> tasksService.deleteTask(99L))
+        assertThatThrownBy(() -> tasksService.deleteTask(99L, OWNER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class);
-        verify(taskRepository, never()).deleteById(any());
+        verify(taskRepository, never()).delete(any());
     }
 
     private Task taskWithStatus(TaskStatus status) {

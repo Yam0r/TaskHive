@@ -8,21 +8,21 @@ import my.app.files.dto.task.UpdateTaskRequestDto;
 import org.springframework.data.domain.Pageable;
 
 public interface TasksService {
-    TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto);
+    TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto, String userEmail);
 
-    List<TaskDto> retrieveTasksForAProject(Pageable pageable, Long projectId);
+    List<TaskDto> retrieveTasksForAProject(Pageable pageable, Long projectId, String userEmail);
+
+    TaskDto retrieveTaskDetails(Long id, String userEmail);
+
+    void updateTask(Long id, UpdateTaskRequestDto updateTaskRequestDto, String userEmail);
+
+    void deleteTask(Long id, String userEmail);
+
+    TaskDto assignLabelToTask(Long taskId, Long labelId, String userEmail);
+
+    TaskDto removeLabelFromTask(Long taskId, Long labelId, String userEmail);
 
     List<TaskDto> getMyTasks(String userEmail, Pageable pageable);
 
-    TaskDto retrieveTaskDetails(Long id);
-
-    void updateTask(Long id, UpdateTaskRequestDto updateTaskRequestDto);
-
-    void deleteTask(Long id);
-
     TaskStatisticsDto getMyStatistics(String userEmail);
-
-    TaskDto assignLabelToTask(Long taskId, Long labelId);
-
-    TaskDto removeLabelFromTask(Long taskId, Long labelId);
 }

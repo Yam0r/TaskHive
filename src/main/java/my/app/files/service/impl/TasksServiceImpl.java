@@ -36,7 +36,7 @@ public class TasksServiceImpl implements TasksService {
 
     @Override
     @Transactional
-    public TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto) {
+    public TaskDto createANewTask(CreateTaskRequestDto createTaskRequestDto, String userEmail) {
         Task task = taskMapper.toEntity(createTaskRequestDto);
 
         if (task.getStatus() == null) {
@@ -47,7 +47,7 @@ public class TasksServiceImpl implements TasksService {
                 .map(this::getUserById)
                 .ifPresent(task::setAssignee);
 
-        task.setProject(getProjectById(createTaskRequestDto.getProjectId()));
+        task.setProject(getOwnedProject(createTaskRequestDto.getProjectId(), userEmail));
 
         Optional.ofNullable(createTaskRequestDto.getLabelIds())
                 .map(labelRepository::findAllById)
@@ -57,7 +57,9 @@ public class TasksServiceImpl implements TasksService {
     }
 
     @Override
-    public List<TaskDto> retrieveTasksForAProject(Pageable pageable, Long projectId) {
+    public List<TaskDto> retrieveTasksForAProject(Pageable pageable, Long projectId,
+                                                  String userEmail) {
+        getOwnedProject(projectId, userEmail);
         return taskRepository.findAllByProjectId(projectId, pageable)
                 .map(taskMapper::toDto)
                 .getContent();
@@ -75,17 +77,15 @@ public class TasksServiceImpl implements TasksService {
 
     @Override
     @Transactional
-    public TaskDto retrieveTaskDetails(Long id) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
-        return taskMapper.toDto(task);
+    public TaskDto retrieveTaskDetails(Long id, String userEmail) {
+        return taskMapper.toDto(getOwnedTask(id, userEmail));
     }
 
     @Override
     @Transactional
-    public void updateTask(Long id, UpdateTaskRequestDto updateTaskRequestDto) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+    public void updateTask(Long id, UpdateTaskRequestDto updateTaskRequestDto,
+                           String userEmail) {
+        Task task = getOwnedTask(id, userEmail);
         taskMapper.updateTaskFromDto(updateTaskRequestDto, task);
 
         Optional.ofNullable(updateTaskRequestDto.getAssigneeId())
@@ -97,11 +97,8 @@ public class TasksServiceImpl implements TasksService {
 
     @Override
     @Transactional
-    public void deleteTask(Long id) {
-        if (!taskRepository.existsById(id)) {
-            throw new EntityNotFoundException("Task not found");
-        }
-        taskRepository.deleteById(id);
+    public void deleteTask(Long id, String userEmail) {
+        taskRepository.delete(getOwnedTask(id, userEmail));
     }
 
     @Override
@@ -122,9 +119,8 @@ public class TasksServiceImpl implements TasksService {
 
     @Override
     @Transactional
-    public TaskDto assignLabelToTask(Long taskId, Long labelId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+    public TaskDto assignLabelToTask(Long taskId, Long labelId, String userEmail) {
+        Task task = getOwnedTask(taskId, userEmail);
         Label label = getLabelById(labelId);
 
         task.getLabels().add(label);
@@ -135,9 +131,8 @@ public class TasksServiceImpl implements TasksService {
 
     @Override
     @Transactional
-    public TaskDto removeLabelFromTask(Long taskId, Long labelId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+    public TaskDto removeLabelFromTask(Long taskId, Long labelId, String userEmail) {
+        Task task = getOwnedTask(taskId, userEmail);
         Label label = getLabelById(labelId);
 
         task.getLabels().remove(label);
@@ -151,11 +146,6 @@ public class TasksServiceImpl implements TasksService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
 
-    private Project getProjectById(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
-    }
-
     private Label getLabelById(Long labelId) {
         return labelRepository.findById(labelId)
                 .orElseThrow(() -> new EntityNotFoundException("Label not found"));
@@ -163,5 +153,15 @@ public class TasksServiceImpl implements TasksService {
 
     private long countByStatus(List<Task> tasks, TaskStatus status) {
         return tasks.stream().filter(t -> t.getStatus() == status).count();
+    }
+
+    private Task getOwnedTask(Long id, String userEmail) {
+        return taskRepository.findByIdAndProjectUserEmail(id, userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+    }
+
+    private Project getOwnedProject(Long projectId, String userEmail) {
+        return projectRepository.findByIdAndUserEmail(projectId, userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
     }
 }
