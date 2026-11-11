@@ -113,4 +113,11 @@ class ProjectApiIntegrationTest {
                 "SELECT COUNT(*) FROM tasks WHERE project_id = 1", Integer.class);
         assertThat(tasks).isZero();
     }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = "USER")
+    void getProjects_UnknownSortProperty_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/projects").param("sort", "string"))
+                .andExpect(status().isBadRequest());
+    }
 }

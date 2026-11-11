@@ -10,6 +10,7 @@ import my.app.files.dto.task.TaskDto;
 import my.app.files.dto.task.TaskStatisticsDto;
 import my.app.files.dto.task.UpdateTaskRequestDto;
 import my.app.files.service.TasksService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +51,8 @@ public class TasksController {
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<List<TaskDto>> retrieveTasksForAProject(
-            Pageable pageable, Long projectId,
+            @ParameterObject Pageable pageable,
+            Long projectId,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(tasksService.retrieveTasksForAProject(pageable, projectId,
                 userDetails.getUsername()));
@@ -72,7 +74,7 @@ public class TasksController {
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping("/my")
     public ResponseEntity<List<TaskDto>> getMyTasks(
-            @AuthenticationPrincipal UserDetails userDetails, Pageable pageable) {
+            @AuthenticationPrincipal UserDetails userDetails, @ParameterObject Pageable pageable) {
         return ResponseEntity.ok(tasksService.getMyTasks(userDetails.getUsername(), pageable));
     }
 

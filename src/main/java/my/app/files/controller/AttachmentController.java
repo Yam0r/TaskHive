@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import my.app.files.dto.attachment.AttachmentDto;
 import my.app.files.service.AttachmentService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +44,7 @@ public class AttachmentController {
     @GetMapping
     public ResponseEntity<Page<AttachmentDto>> getAttachmentsForTask(
             @RequestParam("taskId") Long taskId,
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(attachmentService.getAttachmentsForTask(taskId, pageable,
                 userDetails.getUsername()));

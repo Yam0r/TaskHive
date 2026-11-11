@@ -3,7 +3,7 @@ package my.app.files.validator;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.Objects;
-import org.apache.commons.beanutils.BeanUtils;
+import org.springframework.beans.BeanWrapperImpl;
 
 public class FieldMatchValidator implements ConstraintValidator<FieldMatch, Object> {
     private String firstFieldName;
@@ -17,12 +17,9 @@ public class FieldMatchValidator implements ConstraintValidator<FieldMatch, Obje
 
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext context) {
-        try {
-            Object firstObj = BeanUtils.getProperty(value, firstFieldName);
-            Object secondObj = BeanUtils.getProperty(value, secondFieldName);
-            return Objects.equals(firstObj, secondObj);
-        } catch (Exception e) {
-            return false;
-        }
+        BeanWrapperImpl wrapper = new BeanWrapperImpl(value);
+        Object firstObj = wrapper.getPropertyValue(firstFieldName);
+        Object secondObj = wrapper.getPropertyValue(secondFieldName);
+        return Objects.equals(firstObj, secondObj);
     }
 }
