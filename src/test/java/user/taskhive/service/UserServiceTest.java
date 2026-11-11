@@ -84,6 +84,19 @@ class UserServiceTest {
     }
 
     @Test
+    void register_UsernameAlreadyTaken_ThrowsAndDoesNotSave() {
+        when(userRepository.existsByEmail("newuser@example.com")).thenReturn(false);
+        when(userRepository.existsByUsername("NewUser")).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.register(
+                createRegistrationRequest("newuser@example.com")))
+                .isInstanceOf(UserAlreadyExistsException.class)
+                .hasMessage("Can't register user: username already exists");
+        verify(userRepository, never()).save(any());
+        verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
     void updateUserRole_ExistingUser_ReplacesRoles() {
         User user = TestDataUtil.createTestUser(1L, "testuser@example.com", "John", "Doe");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));

@@ -28,6 +28,8 @@ public class UserServiceImpl implements UserService {
 
     private static final String NOT_REGISTRATION_EMAIL_MESSAGE = "Can't register user: "
             + "email already exists";
+    private static final String NOT_REGISTRATION_USERNAME_MESSAGE = "Can't register user: "
+            + "username already exists";
     private static final String NOT_FOUND_ROLE = "Role %s not found in the database:";
     private final UserMapper userMapper;
     private final UserRepository userRepository;
@@ -41,6 +43,13 @@ public class UserServiceImpl implements UserService {
         String email = requestDto.getEmail().toLowerCase();
         if (userRepository.existsByEmail(email)) {
             throw new UserAlreadyExistsException(NOT_REGISTRATION_EMAIL_MESSAGE);
+        }
+
+        if (userRepository.existsByEmail(email)) {
+            throw new UserAlreadyExistsException(NOT_REGISTRATION_EMAIL_MESSAGE);
+        }
+        if (userRepository.existsByUsername(requestDto.getUsername())) {
+            throw new UserAlreadyExistsException(NOT_REGISTRATION_USERNAME_MESSAGE);
         }
 
         String roleName = Role.RoleName.USER.name();
