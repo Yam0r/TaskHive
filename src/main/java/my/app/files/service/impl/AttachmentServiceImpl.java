@@ -4,7 +4,6 @@ import com.dropbox.core.DbxException;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.FileMetadata;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
@@ -19,6 +18,7 @@ import my.app.files.service.AttachmentService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -31,10 +31,8 @@ public class AttachmentServiceImpl implements AttachmentService {
     private final AttachmentMapper attachmentMapper;
 
     @Override
-    @Transactional
-    public AttachmentDto uploadAttachment(Long taskId, MultipartFile file) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+    public AttachmentDto uploadAttachment(Long taskId, MultipartFile file, String userEmail) {
+        Task task = getOwnedTask(taskId, userEmail);
 
         FileMetadata metadata;
         try (InputStream inputStream = file.getInputStream()) {
@@ -54,8 +52,16 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     @Override
-    public Page<AttachmentDto> getAttachmentsForTask(Long taskId, Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<AttachmentDto> getAttachmentsForTask(Long taskId, Pageable pageable,
+                                                     String userEmail) {
+        getOwnedTask(taskId, userEmail);
         return attachmentRepository.findByTaskId(taskId, pageable)
                 .map(attachmentMapper::toDto);
+    }
+
+    private Task getOwnedTask(Long taskId, String userEmail) {
+        return taskRepository.findByIdAndProjectUserEmail(taskId, userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
     }
 }
