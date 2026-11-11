@@ -91,61 +91,69 @@ class ProjectServiceTest {
     }
 
     @Test
-    void retrieveProjectDetails_ExistingId_ReturnsMappedProject() {
+    void retrieveProjectDetails_OwnProject_ReturnsMappedProject() {
         Project project = TestDataUtil.createTestProject(1L);
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(project));
         ProjectDto projectDto = new ProjectDto();
         when(projectMapper.toProjectDto(project)).thenReturn(projectDto);
 
-        assertThat(projectService.retrieveProjectDetails(1L)).isSameAs(projectDto);
+        assertThat(projectService.retrieveProjectDetails(1L, OWNER_EMAIL)).isSameAs(projectDto);
     }
 
     @Test
-    void retrieveProjectDetails_NonExistingId_Throws() {
-        when(projectRepository.findById(99L)).thenReturn(Optional.empty());
+    void retrieveProjectDetails_NotFoundOrNotOwned_Throws() {
+        when(projectRepository.findByIdAndUserEmail(99L, OWNER_EMAIL))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectService.retrieveProjectDetails(99L))
+        assertThatThrownBy(() -> projectService.retrieveProjectDetails(99L, OWNER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Project not found with id: 99");
     }
 
     @Test
-    void updateProject_ExistingId_AppliesChangesAndSaves() {
+    void updateProject_OwnProject_AppliesChangesAndSaves() {
         Project project = TestDataUtil.createTestProject(1L);
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.findByIdAndUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(project));
         UpdateProjectRequestDto requestDto = new UpdateProjectRequestDto();
         requestDto.setName("Updated Name");
 
-        projectService.updateProject(1L, requestDto);
+        projectService.updateProject(1L, requestDto, OWNER_EMAIL);
 
         verify(projectMapper).updateProjectFromDto(requestDto, project);
         verify(projectRepository).save(project);
     }
 
     @Test
-    void updateProject_NonExistingId_ThrowsAndDoesNotSave() {
-        when(projectRepository.findById(99L)).thenReturn(Optional.empty());
+    void updateProject_NotFoundOrNotOwned_ThrowsAndDoesNotSave() {
+        when(projectRepository.findByIdAndUserEmail(99L, OWNER_EMAIL))
+                .thenReturn(Optional.empty());
+        UpdateProjectRequestDto requestDto = new UpdateProjectRequestDto();
 
-        assertThatThrownBy(() -> projectService.updateProject(99L, new UpdateProjectRequestDto()))
+        assertThatThrownBy(() -> projectService.updateProject(99L, requestDto, OWNER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class);
         verify(projectRepository, never()).save(any());
     }
 
     @Test
-    void deleteProject_ExistingId_DeletesIt() {
-        when(projectRepository.existsById(1L)).thenReturn(true);
+    void deleteProject_OwnProject_DeletesIt() {
+        Project project = TestDataUtil.createTestProject(1L);
+        when(projectRepository.findByIdAndUserEmail(1L, OWNER_EMAIL))
+                .thenReturn(Optional.of(project));
 
-        projectService.deleteProject(1L);
+        projectService.deleteProject(1L, OWNER_EMAIL);
 
-        verify(projectRepository).deleteById(1L);
+        verify(projectRepository).delete(project);
     }
 
     @Test
-    void deleteProject_NonExistingId_ThrowsAndDoesNotDelete() {
-        when(projectRepository.existsById(99L)).thenReturn(false);
+    void deleteProject_NotFoundOrNotOwned_ThrowsAndDoesNotDelete() {
+        when(projectRepository.findByIdAndUserEmail(99L, OWNER_EMAIL))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectService.deleteProject(99L))
+        assertThatThrownBy(() -> projectService.deleteProject(99L, OWNER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class);
-        verify(projectRepository, never()).deleteById(any());
+        verify(projectRepository, never()).delete(any());
     }
 }

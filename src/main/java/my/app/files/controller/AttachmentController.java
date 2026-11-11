@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,8 +31,10 @@ public class AttachmentController {
     @PostMapping
     public ResponseEntity<AttachmentDto> uploadAttachment(
             @RequestParam("taskId") Long taskId,
-            @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(attachmentService.uploadAttachment(taskId, file));
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(attachmentService.uploadAttachment(taskId, file,
+                userDetails.getUsername()));
     }
 
     @Operation(summary = "Get all attachments for a task",
@@ -39,7 +43,9 @@ public class AttachmentController {
     @GetMapping
     public ResponseEntity<Page<AttachmentDto>> getAttachmentsForTask(
             @RequestParam("taskId") Long taskId,
-            Pageable pageable) {
-        return ResponseEntity.ok(attachmentService.getAttachmentsForTask(taskId, pageable));
+            Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(attachmentService.getAttachmentsForTask(taskId, pageable,
+                userDetails.getUsername()));
     }
 }

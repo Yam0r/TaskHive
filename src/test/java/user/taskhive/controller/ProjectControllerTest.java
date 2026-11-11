@@ -90,10 +90,9 @@ class ProjectControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void getProject_ExistingId_ReturnsProject() throws Exception {
-        when(projectService.retrieveProjectDetails(1L)).thenReturn(createProjectDto());
-
+        when(projectService.retrieveProjectDetails(1L, USER_EMAIL)).thenReturn(createProjectDto());
         mockMvc.perform(get("/projects/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -101,9 +100,9 @@ class ProjectControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void getProject_NonExistingId_ReturnsNotFound() throws Exception {
-        when(projectService.retrieveProjectDetails(99L))
+        when(projectService.retrieveProjectDetails(99L, USER_EMAIL))
                 .thenThrow(new EntityNotFoundException("Project not found with id: 99"));
 
         mockMvc.perform(get("/projects/99"))
@@ -111,7 +110,7 @@ class ProjectControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void updateProject_ValidRequest_ReturnsNoContent() throws Exception {
         UpdateProjectRequestDto requestDto = new UpdateProjectRequestDto();
         requestDto.setName("Updated Name");
@@ -122,7 +121,7 @@ class ProjectControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(projectService).updateProject(eq(1L),
-                argThat(dto -> "Updated Name".equals(dto.getName())));
+                argThat(dto -> "Updated Name".equals(dto.getName())), eq(USER_EMAIL));
     }
 
     @Test
@@ -140,12 +139,12 @@ class ProjectControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void deleteProject_ExistingId_ReturnsNoContent() throws Exception {
         mockMvc.perform(delete("/projects/1"))
                 .andExpect(status().isNoContent());
 
-        verify(projectService).deleteProject(1L);
+        verify(projectService).deleteProject(1L, USER_EMAIL);
     }
 
     private CreateProjectRequestDto createValidRequest() {

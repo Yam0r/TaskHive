@@ -34,6 +34,7 @@ import user.taskhive.config.TestDataUtil;
 
 @ExtendWith(MockitoExtension.class)
 class CommentServiceTest {
+    private static final String USER_EMAIL = "author@example.com";
 
     @Mock
     private CommentRepository commentRepository;
@@ -51,17 +52,18 @@ class CommentServiceTest {
     private CommentServiceImpl commentService;
 
     @Test
-    void addComment_ValidRequest_SavesCommentWithTaskAndAuthor() {
+    void addComment_OwnTask_SavesCommentWithAuthorFromToken() {
         Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        User author = TestDataUtil.createTestUser(2L, "author@example.com", "John", "Doe");
-        when(userRepository.findById(2L)).thenReturn(Optional.of(author));
+        when(taskRepository.findByIdAndProjectUserEmail(1L, USER_EMAIL))
+                .thenReturn(Optional.of(task));
+        User author = TestDataUtil.createTestUser(2L, USER_EMAIL, "John", "Doe");
+        when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(author));
         when(commentRepository.save(any(Comment.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         CommentDto commentDto = new CommentDto();
         when(commentMapper.toDto(any(Comment.class))).thenReturn(commentDto);
 
-        CommentDto result = commentService.addComment(createRequest(1L, 2L));
+        CommentDto result = commentService.addComment(createRequest(1L), USER_EMAIL);
 
         ArgumentCaptor<Comment> captor = ArgumentCaptor.forClass(Comment.class);
         verify(commentRepository).save(captor.capture());
@@ -74,10 +76,11 @@ class CommentServiceTest {
     }
 
     @Test
-    void addComment_TaskNotFound_ThrowsAndDoesNotSave() {
-        when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+    void addComment_TaskNotFoundOrNotOwned_ThrowsAndDoesNotSave() {
+        when(taskRepository.findByIdAndProjectUserEmail(999L, USER_EMAIL))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> commentService.addComment(createRequest(999L, 2L)))
+        assertThatThrownBy(() -> commentService.addComment(createRequest(999L), USER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Task not found");
         verify(commentRepository, never()).save(any());
@@ -86,17 +89,21 @@ class CommentServiceTest {
     @Test
     void addComment_AuthorNotFound_ThrowsAndDoesNotSave() {
         Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndProjectUserEmail(1L, USER_EMAIL))
+                .thenReturn(Optional.of(task));
+        when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> commentService.addComment(createRequest(1L, 999L)))
+        assertThatThrownBy(() -> commentService.addComment(createRequest(1L), USER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("User not found");
         verify(commentRepository, never()).save(any());
     }
 
     @Test
-    void getCommentsForTask_MapsEveryComment() {
+    void getCommentsForTask_OwnTask_MapsEveryComment() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        when(taskRepository.findByIdAndProjectUserEmail(1L, USER_EMAIL))
+                .thenReturn(Optional.of(task));
         Comment first = new Comment();
         Comment second = new Comment();
         Pageable pageable = PageRequest.of(0, 10);
@@ -107,15 +114,25 @@ class CommentServiceTest {
         CommentDto secondDto = new CommentDto();
         when(commentMapper.toDto(second)).thenReturn(secondDto);
 
-        Page<CommentDto> result = commentService.getCommentsForTask(1L, pageable);
+        Page<CommentDto> result = commentService.getCommentsForTask(1L, pageable, USER_EMAIL);
 
         assertThat(result.getContent()).containsExactly(firstDto, secondDto);
     }
 
-    private CreateCommentRequestDto createRequest(Long taskId, Long userId) {
+    @Test
+    void getCommentsForTask_NotOwnedTask_ThrowsAndDoesNotLoadComments() {
+        when(taskRepository.findByIdAndProjectUserEmail(1L, USER_EMAIL))
+                .thenReturn(Optional.empty());
+        Pageable pageable = PageRequest.of(0, 10);
+
+        assertThatThrownBy(() -> commentService.getCommentsForTask(1L, pageable, USER_EMAIL))
+                .isInstanceOf(EntityNotFoundException.class);
+        verify(commentRepository, never()).findByTaskId(any(), any());
+    }
+
+    private CreateCommentRequestDto createRequest(Long taskId) {
         CreateCommentRequestDto requestDto = new CreateCommentRequestDto();
         requestDto.setTaskId(taskId);
-        requestDto.setUserId(userId);
         requestDto.setText("Comment text");
         requestDto.setContent("Comment content");
         return requestDto;

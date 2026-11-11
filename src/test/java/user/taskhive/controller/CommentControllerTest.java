@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @Sql(scripts = "classpath:database/clear-all.sql",
         executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 class CommentControllerTest {
+    private static final String OWNER = "testuser@example.com";
 
     @Autowired
     private MockMvc mockMvc;
@@ -31,7 +32,7 @@ class CommentControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = OWNER, roles = "USER")
     void addComment_ValidRequest_ReturnsCreatedComment() throws Exception {
         mockMvc.perform(post("/comments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -42,7 +43,7 @@ class CommentControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = OWNER, roles = "USER")
     void addComment_MissingTaskId_ReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/comments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -51,7 +52,7 @@ class CommentControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = OWNER, roles = "USER")
     void addComment_NonExistingTask_ReturnsNotFound() throws Exception {
         mockMvc.perform(post("/comments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -60,7 +61,7 @@ class CommentControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = OWNER, roles = "USER")
     void getComments_ExistingTask_ReturnsItsComments() throws Exception {
         mockMvc.perform(get("/comments").param("taskId", "1"))
                 .andExpect(status().isOk())
@@ -70,7 +71,6 @@ class CommentControllerTest {
     private CreateCommentRequestDto createRequest(Long taskId) {
         CreateCommentRequestDto requestDto = new CreateCommentRequestDto();
         requestDto.setTaskId(taskId);
-        requestDto.setUserId(2L);
         requestDto.setText("This is a new comment.");
         return requestDto;
     }

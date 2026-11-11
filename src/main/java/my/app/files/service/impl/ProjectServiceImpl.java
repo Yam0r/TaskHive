@@ -47,27 +47,24 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProjectDto retrieveProjectDetails(Long id) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: "
-                        + id));
-        return projectMapper.toProjectDto(project);
+    public ProjectDto retrieveProjectDetails(Long id, String userEmail) {
+        return projectMapper.toProjectDto(getOwnedProject(id, userEmail));
     }
 
     @Override
-    public void updateProject(Long id, UpdateProjectRequestDto requestDto) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: "
-                        + id));
+    public void updateProject(Long id, UpdateProjectRequestDto requestDto, String userEmail) {
+        Project project = getOwnedProject(id, userEmail);
         projectMapper.updateProjectFromDto(requestDto, project);
         projectRepository.save(project);
     }
 
     @Override
-    public void deleteProject(Long id) {
-        if (!projectRepository.existsById(id)) {
-            throw new EntityNotFoundException("Project not found with id: " + id);
-        }
-        projectRepository.deleteById(id);
+    public void deleteProject(Long id, String userEmail) {
+        projectRepository.delete(getOwnedProject(id, userEmail));
+    }
+
+    private Project getOwnedProject(Long id, String userEmail) {
+        return projectRepository.findByIdAndUserEmail(id, userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
     }
 }

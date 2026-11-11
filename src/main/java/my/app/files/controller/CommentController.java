@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,9 +32,11 @@ public class CommentController {
             description = "Creates a new comment for a specific task.")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<CommentDto> addComment(@RequestBody @Valid CreateCommentRequestDto dto) {
+    public ResponseEntity<CommentDto> addComment(
+            @RequestBody @Valid CreateCommentRequestDto dto,
+            @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(commentService.addComment(dto));
+                .body(commentService.addComment(dto, userDetails.getUsername()));
     }
 
     @Operation(summary = "Get comments for a task",
@@ -41,7 +45,9 @@ public class CommentController {
     @GetMapping
     public ResponseEntity<Page<CommentDto>> getComments(
             @RequestParam Long taskId,
-            Pageable pageable) {
-        return ResponseEntity.ok(commentService.getCommentsForTask(taskId, pageable));
+            Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(commentService.getCommentsForTask(taskId, pageable,
+                userDetails.getUsername()));
     }
 }

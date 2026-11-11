@@ -28,11 +28,10 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentDto addComment(CreateCommentRequestDto dto) {
-        Task task = taskRepository.findById(dto.getTaskId())
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+    public CommentDto addComment(CreateCommentRequestDto dto, String userEmail) {
+        Task task = getOwnedTask(dto.getTaskId(), userEmail);
 
-        User author = userRepository.findById(dto.getUserId())
+        User author = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         Comment comment = new Comment();
@@ -46,8 +45,16 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public Page<CommentDto> getCommentsForTask(Long taskId, Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<CommentDto> getCommentsForTask(Long taskId, Pageable pageable,
+                                               String userEmail) {
+        getOwnedTask(taskId, userEmail);
         return commentRepository.findByTaskId(taskId, pageable)
                 .map(commentMapper::toDto);
+    }
+
+    private Task getOwnedTask(Long taskId, String userEmail) {
+        return taskRepository.findByIdAndProjectUserEmail(taskId, userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
     }
 }

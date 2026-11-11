@@ -96,6 +96,33 @@ class AuthenticationControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void login_EmailInDifferentCase_ReturnsToken() throws Exception {
+        registerNewUser();
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "NewUser@Example.COM",
+                                "password", PASSWORD))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+    }
+
+    @Test
+    void register_UsernameAlreadyTaken_ReturnsConflict() throws Exception {
+        mockMvc.perform(post("/auth/registration")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", NEW_USER_EMAIL,
+                                "password", PASSWORD,
+                                "repeatPassword", PASSWORD,
+                                "username", "TestUser",
+                                "firstName", "Peter",
+                                "lastName", "Pavel"))))
+                .andExpect(status().isConflict());
+    }
+
     private void registerNewUser() throws Exception {
         mockMvc.perform(post("/auth/registration")
                         .contentType(MediaType.APPLICATION_JSON)

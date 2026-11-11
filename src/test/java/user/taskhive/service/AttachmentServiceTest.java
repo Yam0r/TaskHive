@@ -38,6 +38,7 @@ import user.taskhive.config.TestDataUtil;
 
 @ExtendWith(MockitoExtension.class)
 class AttachmentServiceTest {
+    private static final String USER_EMAIL = "owner@example.com";
     private static final MockMultipartFile FILE = new MockMultipartFile(
             "file", "report.pdf", "application/pdf", "file content".getBytes());
 
@@ -57,9 +58,10 @@ class AttachmentServiceTest {
     private AttachmentServiceImpl attachmentService;
 
     @Test
-    void uploadAttachment_ExistingTask_UploadsFileAndSavesAttachmentOfTask() throws Exception {
+    void uploadAttachment_OwnTask_UploadsFileAndSavesAttachmentOfTask() throws Exception {
         Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndProjectUserEmail(1L, USER_EMAIL))
+                .thenReturn(Optional.of(task));
         FileMetadata metadata = mock(FileMetadata.class);
         when(metadata.getId()).thenReturn("id:abc");
         when(dropboxClient.files().uploadBuilder("/report.pdf")
@@ -70,7 +72,7 @@ class AttachmentServiceTest {
         AttachmentDto attachmentDto = new AttachmentDto();
         when(attachmentMapper.toDto(any(Attachment.class))).thenReturn(attachmentDto);
 
-        AttachmentDto result = attachmentService.uploadAttachment(1L, FILE);
+        AttachmentDto result = attachmentService.uploadAttachment(1L, FILE, USER_EMAIL);
 
         ArgumentCaptor<Attachment> captor = ArgumentCaptor.forClass(Attachment.class);
         verify(attachmentRepository).save(captor.capture());
@@ -83,10 +85,11 @@ class AttachmentServiceTest {
     }
 
     @Test
-    void uploadAttachment_UnknownTask_ThrowsWithoutUploading() {
-        when(taskRepository.findById(99L)).thenReturn(Optional.empty());
+    void uploadAttachment_TaskNotFoundOrNotOwned_ThrowsWithoutUploading() {
+        when(taskRepository.findByIdAndProjectUserEmail(99L, USER_EMAIL))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> attachmentService.uploadAttachment(99L, FILE))
+        assertThatThrownBy(() -> attachmentService.uploadAttachment(99L, FILE, USER_EMAIL))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Task not found");
         verifyNoInteractions(dropboxClient);
@@ -96,19 +99,23 @@ class AttachmentServiceTest {
     @Test
     void uploadAttachment_DropboxFails_ThrowsAndDoesNotSave() throws Exception {
         Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndProjectUserEmail(1L, USER_EMAIL))
+                .thenReturn(Optional.of(task));
         when(dropboxClient.files().uploadBuilder("/report.pdf")
                 .uploadAndFinish(any(InputStream.class)))
                 .thenThrow(new IOException("Network is down"));
 
-        assertThatThrownBy(() -> attachmentService.uploadAttachment(1L, FILE))
+        assertThatThrownBy(() -> attachmentService.uploadAttachment(1L, FILE, USER_EMAIL))
                 .hasMessage("Failed to upload file")
                 .hasCauseInstanceOf(IOException.class);
         verify(attachmentRepository, never()).save(any());
     }
 
     @Test
-    void getAttachmentsForTask_MapsEveryAttachment() {
+    void getAttachmentsForTask_OwnTask_MapsEveryAttachment() {
+        Task task = TestDataUtil.createTestTask(TestDataUtil.createTestProject(1L), "Task");
+        when(taskRepository.findByIdAndProjectUserEmail(1L, USER_EMAIL))
+                .thenReturn(Optional.of(task));
         Attachment attachment = new Attachment();
         PageRequest pageable = PageRequest.of(0, 10);
         when(attachmentRepository.findByTaskId(1L, pageable))
@@ -116,8 +123,21 @@ class AttachmentServiceTest {
         AttachmentDto attachmentDto = new AttachmentDto();
         when(attachmentMapper.toDto(attachment)).thenReturn(attachmentDto);
 
-        Page<AttachmentDto> result = attachmentService.getAttachmentsForTask(1L, pageable);
+        Page<AttachmentDto> result = attachmentService.getAttachmentsForTask(1L, pageable,
+                USER_EMAIL);
 
         assertThat(result.getContent()).containsExactly(attachmentDto);
+    }
+
+    @Test
+    void getAttachmentsForTask_NotOwnedTask_ThrowsAndDoesNotLoadAttachments() {
+        when(taskRepository.findByIdAndProjectUserEmail(1L, USER_EMAIL))
+                .thenReturn(Optional.empty());
+        PageRequest pageable = PageRequest.of(0, 10);
+
+        assertThatThrownBy(() -> attachmentService.getAttachmentsForTask(1L, pageable,
+                USER_EMAIL))
+                .isInstanceOf(EntityNotFoundException.class);
+        verify(attachmentRepository, never()).findByTaskId(any(), any());
     }
 }

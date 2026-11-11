@@ -60,8 +60,11 @@ public class ProjectController {
             description = "Retrieves detailed information about a specific project.")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectDto> retrieveProjectDetails(@PathVariable Long id) {
-        return ResponseEntity.ok(projectService.retrieveProjectDetails(id));
+    public ResponseEntity<ProjectDto> retrieveProjectDetails(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(projectService.retrieveProjectDetails(id,
+                userDetails.getUsername()));
     }
 
     @Operation(summary = "Update a project",
@@ -70,16 +73,19 @@ public class ProjectController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> updateProject(
             @PathVariable Long id,
-            @RequestBody @Valid UpdateProjectRequestDto requestDto) {
-        projectService.updateProject(id, requestDto);
+            @RequestBody @Valid UpdateProjectRequestDto requestDto,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        projectService.updateProject(id, requestDto, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Delete a project", description = "Deletes a project by its ID.")
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
-        projectService.deleteProject(id);
+    public ResponseEntity<Void> deleteProject(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        projectService.deleteProject(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

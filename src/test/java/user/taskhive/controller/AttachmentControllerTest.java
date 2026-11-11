@@ -31,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 @SpringBootTest
 @AutoConfigureMockMvc
 class AttachmentControllerTest {
+    private static final String USER_EMAIL = "owner@example.com";
     private static final MockMultipartFile FILE = new MockMultipartFile(
             "file", "report.pdf", "application/pdf", "file content".getBytes());
 
@@ -41,9 +42,10 @@ class AttachmentControllerTest {
     private AttachmentService attachmentService;
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void uploadAttachment_ValidRequest_ReturnsSavedAttachment() throws Exception {
-        when(attachmentService.uploadAttachment(eq(1L), any(MultipartFile.class)))
+        when(attachmentService.uploadAttachment(eq(1L), any(MultipartFile.class),
+                eq(USER_EMAIL)))
                 .thenReturn(createAttachmentDto());
 
         mockMvc.perform(multipart("/attachments").file(FILE).param("taskId", "1"))
@@ -53,11 +55,12 @@ class AttachmentControllerTest {
                 .andExpect(jsonPath("$.dropboxFileId").value("id:abc"));
 
         verify(attachmentService).uploadAttachment(eq(1L),
-                argThat(file -> "report.pdf".equals(file.getOriginalFilename())));
+                argThat(file -> "report.pdf".equals(file.getOriginalFilename())),
+                eq(USER_EMAIL));
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void uploadAttachment_MissingTaskId_ReturnsBadRequest() throws Exception {
         mockMvc.perform(multipart("/attachments").file(FILE))
                 .andExpect(status().isBadRequest());
@@ -66,9 +69,10 @@ class AttachmentControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void uploadAttachment_UnknownTask_ReturnsNotFound() throws Exception {
-        when(attachmentService.uploadAttachment(eq(99L), any(MultipartFile.class)))
+        when(attachmentService.uploadAttachment(eq(99L), any(MultipartFile.class),
+                eq(USER_EMAIL)))
                 .thenThrow(new EntityNotFoundException("Task not found"));
 
         mockMvc.perform(multipart("/attachments").file(FILE).param("taskId", "99"))
@@ -76,9 +80,10 @@ class AttachmentControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = USER_EMAIL, roles = "USER")
     void getAttachments_ReturnsAttachmentsOfTask() throws Exception {
-        when(attachmentService.getAttachmentsForTask(eq(1L), any(Pageable.class)))
+        when(attachmentService.getAttachmentsForTask(eq(1L), any(Pageable.class),
+                eq(USER_EMAIL)))
                 .thenReturn(new PageImpl<>(List.of(createAttachmentDto())));
 
         mockMvc.perform(get("/attachments").param("taskId", "1"))

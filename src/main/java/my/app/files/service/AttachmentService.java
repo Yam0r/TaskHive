@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface AttachmentService {
-    AttachmentDto uploadAttachment(Long taskId, MultipartFile file);
+    AttachmentDto uploadAttachment(Long taskId, MultipartFile file, String userEmail);
 
-    Page<AttachmentDto> getAttachmentsForTask(Long taskId, Pageable pageable);
+    Page<AttachmentDto> getAttachmentsForTask(Long taskId, Pageable pageable, String userEmail);
 }

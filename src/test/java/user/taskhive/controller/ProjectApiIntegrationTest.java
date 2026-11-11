@@ -1,6 +1,7 @@
 package user.taskhive.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -74,5 +75,42 @@ class ProjectApiIntegrationTest {
         mockMvc.perform(get("/projects"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@example.com", roles = "USER")
+    void getProject_OfAnotherUser_ReturnsNotFound() throws Exception {
+        mockMvc.perform(get("/projects/1"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@example.com", roles = "USER")
+    void deleteProject_OfAnotherUser_ReturnsNotFoundAndKeepsProject() throws Exception {
+        mockMvc.perform(delete("/projects/1"))
+                .andExpect(status().isNotFound());
+
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM projects WHERE id = 1", Integer.class);
+        assertThat(count).isEqualTo(1);
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = "USER")
+    void getProject_Own_ReturnsOk() throws Exception {
+        mockMvc.perform(get("/projects/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Test Project"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser@example.com", roles = "USER")
+    void deleteProject_OwnWithTasks_DeletesProjectAndItsTasks() throws Exception {
+        mockMvc.perform(delete("/projects/1"))
+                .andExpect(status().isNoContent());
+
+        Integer tasks = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM tasks WHERE project_id = 1", Integer.class);
+        assertThat(tasks).isZero();
     }
 }
