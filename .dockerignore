@@ -1,0 +1,7 @@
+.env
+.git
+.idea
+target
+out
+images
+*.iml
