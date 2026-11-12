@@ -9,6 +9,7 @@ import my.app.files.dto.project.CreateProjectRequestDto;
 import my.app.files.dto.project.ProjectDto;
 import my.app.files.dto.project.UpdateProjectRequestDto;
 import my.app.files.service.ProjectService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +51,7 @@ public class ProjectController {
     @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<List<ProjectDto>> retrieveUsersProjects(
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(projectService.retrieveUsersProjects(pageable,
                 userDetails.getUsername()));

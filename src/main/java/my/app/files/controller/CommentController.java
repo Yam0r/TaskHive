@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import my.app.files.dto.comment.CommentDto;
 import my.app.files.dto.comment.CreateCommentRequestDto;
 import my.app.files.service.CommentService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -45,7 +46,7 @@ public class CommentController {
     @GetMapping
     public ResponseEntity<Page<CommentDto>> getComments(
             @RequestParam Long taskId,
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(commentService.getCommentsForTask(taskId, pageable,
                 userDetails.getUsername()));

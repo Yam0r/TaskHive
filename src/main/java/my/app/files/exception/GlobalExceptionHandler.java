@@ -1,10 +1,12 @@
 package my.app.files.exception;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -75,5 +77,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex) {
         return new ResponseEntity<>(Map.of("error", "Access denied"), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<Object> handleInvalidSortProperty(PropertyReferenceException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Invalid sort property: " + ex.getPropertyName());
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 }
