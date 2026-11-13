@@ -29,7 +29,7 @@ public class LabelController {
     private final LabelService labelService;
 
     @Operation(summary = "Create a label", description = "Creates a new label.")
-    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<LabelDto> createLabel(@Valid @RequestBody CreateLabelRequestDto dto) {
         LabelDto createdLabel = labelService.createLabel(dto);
@@ -44,7 +44,7 @@ public class LabelController {
     }
 
     @Operation(summary = "Update a label", description = "Updates an existing label by its ID.")
-    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<LabelDto> updateLabel(@PathVariable Long id,
                                                 @Valid @RequestBody UpdateLabelRequestDto dto) {
@@ -53,7 +53,7 @@ public class LabelController {
     }
 
     @Operation(summary = "Delete a label", description = "Deletes a label by its ID.")
-    @PreAuthorize("hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLabel(@PathVariable Long id) {
         labelService.deleteLabel(id);

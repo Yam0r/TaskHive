@@ -45,7 +45,7 @@ class LabelControllerTest {
     private LabelService labelService;
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "ADMIN")
     void createLabel_ValidRequest_ReturnsCreatedLabel() throws Exception {
         when(labelService.createLabel(any(CreateLabelRequestDto.class)))
                 .thenReturn(new LabelDto(1L, "LabelTest", "blue"));
@@ -65,7 +65,7 @@ class LabelControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "ADMIN")
     void createLabel_BlankName_ReturnsBadRequest() throws Exception {
         CreateLabelRequestDto requestDto = new CreateLabelRequestDto();
         requestDto.setName(" ");
@@ -93,7 +93,7 @@ class LabelControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "ADMIN")
     void updateLabel_ValidRequest_ReturnsUpdatedLabel() throws Exception {
         when(labelService.updateLabel(eq(1L), any(UpdateLabelRequestDto.class)))
                 .thenReturn(new LabelDto(1L, "UpdatedLabel", "yellow"));
@@ -110,7 +110,7 @@ class LabelControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "ADMIN")
     void deleteLabel_ExistingId_ReturnsNoContent() throws Exception {
         mockMvc.perform(delete("/labels/1"))
                 .andExpect(status().isNoContent());
@@ -119,7 +119,7 @@ class LabelControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "ADMIN")
     void createLabel_DuplicateName_ReturnsConflict() throws Exception {
         when(labelService.createLabel(any(CreateLabelRequestDto.class)))
                 .thenThrow(new LabelAlreadyExistsException("Label with this name already exists"));
@@ -134,7 +134,7 @@ class LabelControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "ADMIN")
     void updateLabel_UnknownId_ReturnsNotFound() throws Exception {
         when(labelService.updateLabel(eq(99L), any(UpdateLabelRequestDto.class)))
                 .thenThrow(new EntityNotFoundException("Label not found by id: 99"));
@@ -148,12 +148,50 @@ class LabelControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "ADMIN")
     void deleteLabel_UnknownId_ReturnsNotFound() throws Exception {
         doThrow(new EntityNotFoundException("Label not found by id: 99"))
                 .when(labelService).deleteLabel(99L);
 
         mockMvc.perform(delete("/labels/99"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void createLabel_AsUser_ReturnsForbidden() throws Exception {
+        CreateLabelRequestDto requestDto = new CreateLabelRequestDto();
+        requestDto.setName("Urgent");
+        requestDto.setColor("#ff0000");
+
+        mockMvc.perform(post("/labels")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(labelService);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void updateLabel_AsUser_ReturnsForbidden() throws Exception {
+        UpdateLabelRequestDto requestDto = new UpdateLabelRequestDto();
+        requestDto.setName("Renamed");
+
+        mockMvc.perform(put("/labels/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(labelService);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void deleteLabel_AsUser_ReturnsForbidden() throws Exception {
+        mockMvc.perform(delete("/labels/1"))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(labelService);
     }
 }
