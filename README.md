@@ -15,12 +15,12 @@ Frontend (Angular): [TaskHive-frontend](https://github.com/Yam0r/TaskHive-fronte
   only to its owner; requests for someone else's data return `404`, so IDs can't be probed.
 - **Stateless JWT authentication** with Spring Security, BCrypt-hashed passwords and
   role-based endpoints (`USER` / `ADMIN`).
-- **136 automated tests**: unit tests with Mockito and integration tests against a real
+- **130+ automated tests**: unit tests with Mockito and integration tests against a real
   PostgreSQL in Docker via Testcontainers.
 - **CI on GitHub Actions**: every pull request runs Checkstyle and the full test suite;
   `main` accepts changes only through a pull request with a green build.
 - **Database migrations with Liquibase**, including cascade rules for related data.
-- **Production-ready Docker image**: multi-stage build, JRE-only runtime, non-root user,
+- **Docker image**: multi-stage build, JRE-only runtime, non-root user,
   no secrets baked in.
 - **Consistent error responses** via a global exception handler (`400`, `401`, `403`,
   `404`, `409`).
@@ -108,6 +108,8 @@ Full interactive documentation is available in Swagger UI once the app is runnin
 | DELETE | `/labels/{id}` | Delete a label |
 
 Paginated endpoints accept `page`, `size` and `sort` (e.g. `sort=name,desc`).
+
+</details>
 
 ---
 
