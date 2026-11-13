@@ -99,7 +99,7 @@ Full interactive documentation is available in Swagger UI once the app is runnin
 | POST | `/attachments` | Upload a file to a task (multipart, stored in Dropbox) |
 | GET | `/attachments?taskId={id}` | Attachments of a task (paginated) |
 
-### Labels
+### Labels(**admin only**)
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/labels` | Create a label |
