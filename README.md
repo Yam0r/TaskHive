@@ -99,13 +99,13 @@ Full interactive documentation is available in Swagger UI once the app is runnin
 | POST | `/attachments` | Upload a file to a task (multipart, stored in Dropbox) |
 | GET | `/attachments?taskId={id}` | Attachments of a task (paginated) |
 
-### Labels(**admin only**)
+### Labels
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/labels` | Create a label |
+| POST | `/labels` | Create a label (**admin only**)|
 | GET | `/labels` | List labels |
-| PUT | `/labels/{id}` | Update a label |
-| DELETE | `/labels/{id}` | Delete a label |
+| PUT | `/labels/{id}` | Update a label (**admin only**)|
+| DELETE | `/labels/{id}` | Delete a label (**admin only**)|
 
 Paginated endpoints accept `page`, `size` and `sort` (e.g. `sort=name,desc`).
 
