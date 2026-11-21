@@ -123,6 +123,27 @@ class AuthenticationControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void login_WithStaleTokenInHeader_StillReturnsToken() throws Exception {
+        registerNewUser();
+
+        mockMvc.perform(post("/auth/login")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer invalid.token.value")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", NEW_USER_EMAIL,
+                                "password", PASSWORD))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+    }
+
+    @Test
+    void protectedEndpoint_WithInvalidToken_ReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/users/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer invalid.token.value"))
+                .andExpect(status().isUnauthorized());
+    }
+
     private void registerNewUser() throws Exception {
         mockMvc.perform(post("/auth/registration")
                         .contentType(MediaType.APPLICATION_JSON)
