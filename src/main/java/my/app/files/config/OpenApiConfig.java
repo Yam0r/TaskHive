@@ -12,7 +12,8 @@ import org.springframework.context.annotation.Configuration;
         info = @Info(
                 title = "TaskHive API",
                 version = "1.0",
-                description = "Task management REST API: projects, tasks, comments, labels, attachments"
+                description = "Task management REST API: projects, tasks, "
+                        + "comments, labels, attachments"
         ),
         security = @SecurityRequirement(name = "bearerAuth")
 )
